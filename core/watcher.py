@@ -55,12 +55,14 @@ class Sentinel:
         haiku: bool = False,
         json_output: bool = False,
         callback: Optional[Callable] = None,
+        project_path: Optional[str] = None,
     ):
         self.filepath = os.path.abspath(filepath)
         self.deep = deep
         self.haiku = haiku
         self.json_output = json_output
         self.callback = callback
+        self.project_path = project_path
         self._running = False
         self._buffer = []
         self._in_traceback = False
@@ -82,9 +84,9 @@ class Sentinel:
         if self.json_output:
             from core.analyzer import analyze_to_json
             print(f"\n[{timestamp}] 🚨 Error #{self._error_count} detected:")
-            print(analyze_to_json(traceback_text, deep=self.deep, haiku=self.haiku))
+            print(analyze_to_json(traceback_text, deep=self.deep, haiku=self.haiku, project_path=self.project_path))
         else:
-            report = analyze(traceback_text, deep=self.deep, haiku=self.haiku)
+            report = analyze(traceback_text, deep=self.deep, haiku=self.haiku, project_path=self.project_path)
             if self.callback:
                 self.callback(report)
             else:

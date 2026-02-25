@@ -93,11 +93,13 @@ def _get_anthropic_client() -> Optional[object]:
     return anthropic.Anthropic(api_key=api_key)
 
 
-def _build_user_message(traceback_text: str, source_context: str = "") -> str:
-    """Build the user message with traceback and optional source context."""
+def _build_user_message(traceback_text: str, source_context: str = "", project_context: str = "") -> str:
+    """Build the user message with traceback, source context, and project context."""
     msg = f"Analyze this traceback:\n\n```\n{traceback_text}\n```"
     if source_context:
         msg += f"\n\nSource code context (lines around the error):\n\n```\n{source_context}\n```"
+    if project_context:
+        msg += f"\n\nProject context (languages, frameworks, dependencies):\n\n```\n{project_context}\n```\n\nUse the project context to give precise fixes — reference actual package names, versions, and framework conventions."
     return msg
 
 
@@ -110,7 +112,7 @@ def _parse_response(response_text: str) -> dict:
     return json.loads(text)
 
 
-def _analyze_grok(traceback_text: str, source_context: str = "") -> Optional[dict]:
+def _analyze_grok(traceback_text: str, source_context: str = "", project_context: str = "") -> Optional[dict]:
     """Tier 2: Grok Fast analysis."""
     client = _get_grok_client()
     if client is None:
@@ -121,7 +123,7 @@ def _analyze_grok(traceback_text: str, source_context: str = "") -> Optional[dic
             model=TIER_2_MODEL,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": _build_user_message(traceback_text, source_context)},
+                {"role": "user", "content": _build_user_message(traceback_text, source_context, project_context)},
             ],
             max_tokens=1024,
         )
@@ -141,7 +143,7 @@ def _analyze_grok(traceback_text: str, source_context: str = "") -> Optional[dic
         }
 
 
-def _analyze_anthropic(traceback_text: str, deep: bool = False, source_context: str = "") -> Optional[dict]:
+def _analyze_anthropic(traceback_text: str, deep: bool = False, source_context: str = "", project_context: str = "") -> Optional[dict]:
     """Tier 3/4: Anthropic Claude analysis."""
     client = _get_anthropic_client()
     if client is None:
@@ -157,7 +159,7 @@ def _analyze_anthropic(traceback_text: str, deep: bool = False, source_context: 
             max_tokens=1024,
             system=system,
             messages=[
-                {"role": "user", "content": _build_user_message(traceback_text, source_context)},
+                {"role": "user", "content": _build_user_message(traceback_text, source_context, project_context)},
             ],
         )
         result = _parse_response(message.content[0].text)
@@ -176,24 +178,25 @@ def _analyze_anthropic(traceback_text: str, deep: bool = False, source_context: 
         }
 
 
-def analyze_with_llm(traceback_text: str, deep: bool = False, haiku: bool = False, source_context: str = "") -> Optional[dict]:
+def analyze_with_llm(traceback_text: str, deep: bool = False, haiku: bool = False, source_context: str = "", project_context: str = "") -> Optional[dict]:
     """
-    Quad-Tier LLM routing.
+    Quad-Tier LLM routing with optional project context.
 
     Args:
         traceback_text: Raw traceback string
         deep: If True, use Tier 4 (Claude Sonnet — deep reasoning)
         haiku: If True, use Tier 3 (Claude Haiku — mid-tier)
         source_context: Pre-extracted source code context to inject into prompt
+        project_context: Project metadata (language, deps, framework) for precise fixes
 
     Returns:
         Parsed dict with debug report fields, or None if no LLM available
     """
     if deep:
-        return _analyze_anthropic(traceback_text, deep=True, source_context=source_context)
+        return _analyze_anthropic(traceback_text, deep=True, source_context=source_context, project_context=project_context)
 
     if haiku:
-        return _analyze_anthropic(traceback_text, deep=False, source_context=source_context)
+        return _analyze_anthropic(traceback_text, deep=False, source_context=source_context, project_context=project_context)
 
     # Default: Tier 2 Grok Fast
-    return _analyze_grok(traceback_text, source_context=source_context)
+    return _analyze_grok(traceback_text, source_context=source_context, project_context=project_context)

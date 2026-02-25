@@ -13,6 +13,8 @@ Usage:
     python cli.py --watch app.log --deep        # Sentinel + deep analysis
     some_command 2>&1 | python cli.py           # Pipe stderr
     python cli.py --json                        # JSON output
+    python cli.py --project ./myapp --file e.log  # Project-aware analysis
+    python cli.py --scan ./myapp                # Scan project profile
 """
 
 import argparse
@@ -103,7 +105,28 @@ def main():
         "--watch", "-w", type=str, metavar="LOGFILE",
         help="Sentinel mode: watch a log file for errors in real-time"
     )
+    parser.add_argument(
+        "--project", "-p", type=str, metavar="PATH",
+        help="Project-Aware Mode: path to project root for dependency/framework context"
+    )
+    parser.add_argument(
+        "--scan", "-s", type=str, metavar="PATH",
+        help="Scan a project directory and display its profile (no error analysis)"
+    )
     args = parser.parse_args()
+
+    # SCAN MODE — display project profile and exit
+    if args.scan:
+        from core.project import scan_project
+        profile = scan_project(args.scan)
+        print(f"""
+╔══════════════════════════════════════════════╗
+║  📦 RAIL DEBUG — Project Profile             ║
+╚══════════════════════════════════════════════╝
+
+{profile.format_for_prompt()}
+""")
+        return
 
     # SENTINEL MODE
     if args.watch:
@@ -113,6 +136,7 @@ def main():
             deep=args.deep,
             haiku=args.haiku,
             json_output=args.json,
+            project_path=args.project if args.project else None,
         )
         sentinel.start()
         return
@@ -135,10 +159,15 @@ def main():
         sys.exit(1)
 
     # Analyze
+    project = args.project if args.project else None
     if args.json:
-        print(analyze_to_json(traceback_text, deep=args.deep, haiku=args.haiku))
+        print(analyze_to_json(traceback_text, deep=args.deep, haiku=args.haiku, project_path=project))
     else:
-        report = analyze(traceback_text, deep=args.deep, haiku=args.haiku)
+        report = analyze(traceback_text, deep=args.deep, haiku=args.haiku, project_path=project)
+        if project:
+            from core.project import get_project_profile
+            proj = get_project_profile(project)
+            print(f"\n📦 Project: {proj.name} | {', '.join(proj.languages)} | {', '.join(proj.frameworks[:5])}")
         print(format_report_pretty(report))
 
 
