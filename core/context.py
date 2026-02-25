@@ -1,114 +1,150 @@
 """
-Codebase Context Injection — surgical source code extraction.
+Codebase Context Injection — Surgical Source Reader.
 
-Parses file paths and line numbers from tracebacks, then extracts
-a targeted window (±5 lines) using linecache. Injects only the
-relevant source context into LLM prompts — never full files.
+Parses file paths and line numbers from Python tracebacks,
+then extracts a targeted ±5 line window using linecache.
+Zero full-file reads. Injects only what the LLM needs.
 """
 
 import linecache
 import os
 import re
 from typing import List, Optional
+from dataclasses import dataclass
 
 
-# Match Python traceback file references
-FILE_LINE_PATTERN = re.compile(r'File "(.+?)", line (\d+)')
+@dataclass
+class SourceContext:
+    """A window of source code surrounding an error location."""
+    file_path: str
+    error_line: int
+    start_line: int
+    end_line: int
+    source_lines: List[str]
+    exists: bool
 
-# Context window: 5 lines above and below the error line
-CONTEXT_WINDOW = 5
+    def format_for_prompt(self) -> str:
+        """Format source context for LLM injection."""
+        if not self.exists or not self.source_lines:
+            return f"[Source file not accessible: {self.file_path}]"
+
+        header = f"── {self.file_path} (lines {self.start_line}-{self.end_line}) ──"
+        lines = []
+        for i, line in enumerate(self.source_lines):
+            line_num = self.start_line + i
+            marker = ">>>" if line_num == self.error_line else "   "
+            lines.append(f"{marker} {line_num:4d} | {line}")
+        return f"{header}\n" + "\n".join(lines)
 
 
-def _extract_file_refs(traceback_text: str) -> List[dict]:
+# Pattern to extract file/line from traceback frames
+FRAME_PATTERN = re.compile(r'File "(.+?)", line (\d+)')
+
+# Default context window: ±5 lines around the error
+CONTEXT_RADIUS = 5
+
+
+def extract_frames(traceback_text: str) -> List[tuple]:
     """
-    Extract all file/line references from a traceback.
-
-    Returns list of dicts with 'file', 'line' keys, ordered as they
-    appear in the traceback (deepest/most relevant frame is last).
+    Extract (file_path, line_number) pairs from a traceback.
+    Returns all frames in order (outermost to innermost).
     """
-    refs = []
-    for match in FILE_LINE_PATTERN.finditer(traceback_text):
-        file_path = match.group(1)
-        line_num = int(match.group(2))
-        refs.append({"file": file_path, "line": line_num})
-    return refs
+    return [
+        (m.group(1), int(m.group(2)))
+        for m in FRAME_PATTERN.finditer(traceback_text)
+    ]
 
 
-def _read_context_window(file_path: str, line_num: int, window: int = CONTEXT_WINDOW) -> Optional[str]:
+def read_source_window(
+    file_path: str,
+    line_number: int,
+    radius: int = CONTEXT_RADIUS,
+) -> SourceContext:
     """
-    Read a targeted window of source code around the error line.
+    Read a ±radius line window around line_number using linecache.
 
-    Uses linecache for efficient, cached line access.
-    Returns formatted string with line numbers, or None if file unreadable.
+    linecache is ideal here — it caches reads, handles missing files
+    gracefully, and never loads the entire file into our context.
     """
-    if not os.path.isfile(file_path):
-        return None
+    start = max(1, line_number - radius)
+    end = line_number + radius
 
-    start = max(1, line_num - window)
-    end = line_num + window
+    # Check file exists before burning linecache calls
+    exists = os.path.isfile(file_path)
+    if not exists:
+        return SourceContext(
+            file_path=file_path,
+            error_line=line_number,
+            start_line=start,
+            end_line=end,
+            source_lines=[],
+            exists=False,
+        )
 
     lines = []
+    actual_end = start
     for i in range(start, end + 1):
-        source_line = linecache.getline(file_path, i)
-        if not source_line and i > line_num:
+        line = linecache.getline(file_path, i)
+        if line:
+            lines.append(line.rstrip())
+            actual_end = i
+        elif i > line_number:
+            # Past end of file
             break
-        if source_line:
-            marker = " >>>" if i == line_num else "    "
-            lines.append(f"{marker} {i:4d} | {source_line.rstrip()}")
 
-    if not lines:
-        return None
+    # Clear linecache to avoid stale reads on watched files
+    linecache.clearcache()
 
-    return "\n".join(lines)
+    return SourceContext(
+        file_path=file_path,
+        error_line=line_number,
+        start_line=start,
+        end_line=actual_end,
+        source_lines=lines,
+        exists=True,
+    )
 
 
-def extract_source_context(traceback_text: str, max_frames: int = 3) -> str:
+def extract_context(
+    traceback_text: str,
+    max_frames: int = 3,
+    radius: int = CONTEXT_RADIUS,
+) -> Optional[str]:
     """
-    Extract source context for the most relevant frames in a traceback.
+    Extract source context from a traceback for LLM prompt injection.
 
-    Focuses on the last N frames (closest to the error) since those
-    are most diagnostic. Returns a formatted string ready for LLM injection.
+    Reads the last N frames (innermost = most relevant) and builds
+    a formatted context block. Returns None if no frames found or
+    no files are accessible.
 
     Args:
         traceback_text: Raw traceback string
-        max_frames: Maximum number of frames to extract context for (default 3)
-
-    Returns:
-        Formatted source context string, or empty string if no files readable
+        max_frames: Maximum number of frames to include (default 3, innermost)
+        radius: Lines above/below error to include (default 5)
     """
-    refs = _extract_file_refs(traceback_text)
+    frames = extract_frames(traceback_text)
+    if not frames:
+        return None
 
-    if not refs:
-        return ""
+    # Take the last max_frames (innermost frames are most relevant)
+    target_frames = frames[-max_frames:]
 
-    # Take the last N frames (most relevant, closest to error)
-    relevant_refs = refs[-max_frames:]
+    contexts = []
+    for file_path, line_number in target_frames:
+        ctx = read_source_window(file_path, line_number, radius)
+        if ctx.exists and ctx.source_lines:
+            contexts.append(ctx.format_for_prompt())
 
-    sections = []
-    seen_files = set()
+    if not contexts:
+        return None
 
-    for ref in relevant_refs:
-        file_path = ref["file"]
-        line_num = ref["line"]
+    return "\n\n".join(contexts)
 
-        # Deduplicate same file/line
-        key = f"{file_path}:{line_num}"
-        if key in seen_files:
-            continue
-        seen_files.add(key)
 
-        context = _read_context_window(file_path, line_num)
-        if context:
-            sections.append(
-                f"── {os.path.basename(file_path)} (line {line_num}) ──\n{context}"
-            )
-
-    if not sections:
-        return ""
-
-    return "\n\n".join(sections)
+# Aliases for backward compatibility with analyzer imports
+extract_source_context = extract_context
 
 
 def clear_cache():
-    """Clear linecache. Call after analyzing a batch to free memory."""
+    """Clear linecache to avoid stale reads on watched files."""
     linecache.clearcache()

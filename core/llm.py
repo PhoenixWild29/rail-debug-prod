@@ -11,6 +11,8 @@ import os
 import json
 from typing import Optional
 
+from core.context import extract_context
+
 try:
     import anthropic
 except ImportError:
@@ -29,7 +31,7 @@ except ImportError:
 
 
 # Model routing table
-TIER_2_MODEL = "grok-2-latest"
+TIER_2_MODEL = "grok-4-1-fast"
 TIER_3_MODEL = "claude-3-5-haiku-latest"
 TIER_4_MODEL = "claude-3-7-sonnet-latest"
 
