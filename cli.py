@@ -3,12 +3,14 @@
 Rail Debug CLI — Tri-State AI Error Analysis Engine.
 
 Usage:
-    python cli.py --demo                  # Tier 1 regex demo
-    python cli.py --demo --deep           # Tier 3 deep analysis demo
-    python cli.py --file error.log        # Analyze log file
-    python cli.py --file error.log --deep # Deep analysis on log file
-    some_command 2>&1 | python cli.py     # Pipe stderr
-    python cli.py --json                  # JSON output
+    python cli.py --demo                        # Tier 1 regex demo
+    python cli.py --demo --deep                 # Tier 3 deep analysis demo
+    python cli.py --file error.log              # Analyze log file
+    python cli.py --file error.log --deep       # Deep analysis on log file
+    python cli.py --watch app.log               # Sentinel mode (real-time)
+    python cli.py --watch app.log --deep        # Sentinel + deep analysis
+    some_command 2>&1 | python cli.py           # Pipe stderr
+    python cli.py --json                        # JSON output
 """
 
 import argparse
@@ -90,9 +92,24 @@ def main():
     parser.add_argument(
         "--demo", action="store_true", help="Run with a demo traceback"
     )
+    parser.add_argument(
+        "--watch", "-w", type=str, metavar="LOGFILE",
+        help="Sentinel mode: watch a log file for errors in real-time"
+    )
     args = parser.parse_args()
 
-    # Get input
+    # SENTINEL MODE
+    if args.watch:
+        from core.watcher import Sentinel
+        sentinel = Sentinel(
+            filepath=args.watch,
+            deep=args.deep,
+            json_output=args.json,
+        )
+        sentinel.start()
+        return
+
+    # SINGLE ANALYSIS MODE
     if args.demo:
         traceback_text = DEMO_DEEP_TRACEBACK if args.deep else DEMO_TRACEBACK
     elif args.file:
@@ -102,7 +119,7 @@ def main():
         traceback_text = sys.stdin.read()
     else:
         parser.print_help()
-        print("\n⚠️  No input. Use --file, --demo, or pipe stderr into Rail Debug.")
+        print("\n⚠️  No input. Use --file, --demo, --watch, or pipe stderr into Rail Debug.")
         sys.exit(1)
 
     if not traceback_text.strip():
