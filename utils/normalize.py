@@ -4,27 +4,27 @@ import os
 from typing import Tuple
 
 def normalize_traceback(tb: str) -> Tuple[str, str]:
-    &quot;&quot;&quot;
+    """
     Normalize traceback: extract filename:line, collapse duplicates, return (sha256_hash, snippet[:500])
-    &quot;&quot;&quot;
+    """
     lines = tb.strip().splitlines()
     normalized_lines = []
     seen = set()
     
     for line in lines:
-        # Match Python traceback: File &quot;path&quot;, line N,
-        match = re.search(r'File &quot;([^&quot;]+)&quot;, line (\d+),', line)
+        # Match Python traceback: File "path", line N,
+        match = re.search(r'File "([^"]+)", line (\\d+),', line)
         if match:
             filename = os.path.basename(match.group(1))
             lineno = match.group(2)
-            key = f&quot;{filename}:{lineno}&quot;
+            key = f'{filename}:{lineno}'
             if key not in seen:
                 seen.add(key)
                 normalized_lines.append(key)
         # Fallback: any file:line
-        match_fb = re.search(r'([a-zA-Z0-9_.-]+):(\d+)', line)
+        match_fb = re.search(r'([a-zA-Z0-9_.-]+):(\\d+)', line)
         if match_fb and match_fb.group(1) not in seen:
-            key = f&quot;{match_fb.group(1)}:{match_fb.group(2)}&quot;
+            key = f'{match_fb.group(1)}:{match_fb.group(2)}'
             if key not in seen:
                 seen.add(key)
                 normalized_lines.append(key)
