@@ -1,0 +1,88 @@
+{
+  "name": "rail-debug",
+  "displayName": "Rail Debug",
+  "description": "AI-powered error analysis in VS Code — Quad-Tier Engine (regex → Grok → Haiku → Sonnet)",
+  "version": "0.1.0",
+  "publisher": "secureai",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PhoenixWild29/rail-debug-prod"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Debuggers", "Other"],
+  "keywords": ["debug", "error", "ai", "analysis", "traceback", "python", "node", "rust", "go", "java"],
+  "activationEvents": [],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "rail-debug.analyze",
+        "title": "Analyze Error",
+        "category": "Rail Debug"
+      },
+      {
+        "command": "rail-debug.analyzeDeep",
+        "title": "Deep Analyze (Claude Sonnet)",
+        "category": "Rail Debug"
+      },
+      {
+        "command": "rail-debug.checkServer",
+        "title": "Check Server Health",
+        "category": "Rail Debug"
+      }
+    ],
+    "configuration": {
+      "title": "Rail Debug",
+      "properties": {
+        "railDebug.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "description": "URL of the Rail Debug API server (start with: python cli.py --serve)"
+        },
+        "railDebug.defaultMode": {
+          "type": "string",
+          "enum": ["auto", "haiku", "deep"],
+          "enumDescriptions": [
+            "Tier 1-2: regex then Grok Fast (fast, low cost)",
+            "Tier 3: Claude Haiku 4.5 (mid-tier reasoning)",
+            "Tier 4: Claude Sonnet 4.6 (deep reasoning)"
+          ],
+          "default": "auto",
+          "description": "Default analysis depth"
+        },
+        "railDebug.showStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Rail Debug button in the status bar"
+        }
+      }
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "rail-debug.analyze",
+          "when": "editorHasSelection",
+          "group": "railDebug@1"
+        },
+        {
+          "command": "rail-debug.analyzeDeep",
+          "when": "editorHasSelection",
+          "group": "railDebug@2"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "rail-debug.analyze",
+        "key": "ctrl+shift+d",
+        "mac": "cmd+shift+d",
+        "when": "editorHasSelection"
+      }
+    ]
+  },
+  "scripts": {},
+  "devDependencies": {}
+}
