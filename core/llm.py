@@ -48,6 +48,8 @@ SYSTEM_PROMPT = """You are Rail Debug, an expert AI debugging engine. Analyze th
   "severity": "low|medium|high|critical"
 }
 
+If source code context is provided alongside the traceback, use it to give a more precise root cause and fix. Reference specific variable names, logic errors, or misconfigurations visible in the code.
+
 Be precise. Be actionable. No markdown, no explanation outside the JSON."""
 
 DEEP_SYSTEM_PROMPT = """You are Rail Debug in DEEP ANALYSIS mode. You are an elite debugging architect. Analyze the Python traceback and return ONLY a JSON object with these exact keys:
@@ -63,6 +65,8 @@ DEEP_SYSTEM_PROMPT = """You are Rail Debug in DEEP ANALYSIS mode. You are an eli
   "severity": "low|medium|high|critical",
   "architecture_notes": "broader systemic issues this error reveals, if any"
 }
+
+If source code context is provided, analyze the actual code logic — identify variable states, control flow issues, and architectural antipatterns visible in the surrounding lines. Reference specific code when diagnosing.
 
 Think deeply. Trace causation chains. Identify systemic patterns. No markdown outside the JSON."""
 
@@ -87,6 +91,14 @@ def _get_anthropic_client() -> Optional[object]:
     return anthropic.Anthropic(api_key=api_key)
 
 
+def _build_user_message(traceback_text: str, source_context: str = "") -> str:
+    """Build the user message with traceback and optional source context."""
+    msg = f"Analyze this traceback:\n\n```\n{traceback_text}\n```"
+    if source_context:
+        msg += f"\n\nSource code context (lines around the error):\n\n```\n{source_context}\n```"
+    return msg
+
+
 def _parse_response(response_text: str) -> dict:
     """Parse JSON from LLM response, handling markdown wrapping."""
     text = response_text.strip()
@@ -96,7 +108,7 @@ def _parse_response(response_text: str) -> dict:
     return json.loads(text)
 
 
-def _analyze_grok(traceback_text: str) -> Optional[dict]:
+def _analyze_grok(traceback_text: str, source_context: str = "") -> Optional[dict]:
     """Tier 2: Grok Fast analysis."""
     client = _get_grok_client()
     if client is None:
@@ -107,7 +119,7 @@ def _analyze_grok(traceback_text: str) -> Optional[dict]:
             model=TIER_2_MODEL,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": f"Analyze this traceback:\n\n```\n{traceback_text}\n```"},
+                {"role": "user", "content": _build_user_message(traceback_text, source_context)},
             ],
             max_tokens=1024,
         )
@@ -127,7 +139,7 @@ def _analyze_grok(traceback_text: str) -> Optional[dict]:
         }
 
 
-def _analyze_anthropic(traceback_text: str, deep: bool = False) -> Optional[dict]:
+def _analyze_anthropic(traceback_text: str, deep: bool = False, source_context: str = "") -> Optional[dict]:
     """Tier 3/4: Anthropic Claude analysis."""
     client = _get_anthropic_client()
     if client is None:
@@ -143,7 +155,7 @@ def _analyze_anthropic(traceback_text: str, deep: bool = False) -> Optional[dict
             max_tokens=1024,
             system=system,
             messages=[
-                {"role": "user", "content": f"Analyze this traceback:\n\n```\n{traceback_text}\n```"},
+                {"role": "user", "content": _build_user_message(traceback_text, source_context)},
             ],
         )
         result = _parse_response(message.content[0].text)
@@ -162,7 +174,7 @@ def _analyze_anthropic(traceback_text: str, deep: bool = False) -> Optional[dict
         }
 
 
-def analyze_with_llm(traceback_text: str, deep: bool = False, haiku: bool = False) -> Optional[dict]:
+def analyze_with_llm(traceback_text: str, deep: bool = False, haiku: bool = False, source_context: str = "") -> Optional[dict]:
     """
     Quad-Tier LLM routing.
 
@@ -170,15 +182,16 @@ def analyze_with_llm(traceback_text: str, deep: bool = False, haiku: bool = Fals
         traceback_text: Raw traceback string
         deep: If True, use Tier 4 (Claude Sonnet — deep reasoning)
         haiku: If True, use Tier 3 (Claude Haiku — mid-tier)
+        source_context: Pre-extracted source code context to inject into prompt
 
     Returns:
         Parsed dict with debug report fields, or None if no LLM available
     """
     if deep:
-        return _analyze_anthropic(traceback_text, deep=True)
+        return _analyze_anthropic(traceback_text, deep=True, source_context=source_context)
 
     if haiku:
-        return _analyze_anthropic(traceback_text, deep=False)
+        return _analyze_anthropic(traceback_text, deep=False, source_context=source_context)
 
     # Default: Tier 2 Grok Fast
-    return _analyze_grok(traceback_text)
+    return _analyze_grok(traceback_text, source_context=source_context)

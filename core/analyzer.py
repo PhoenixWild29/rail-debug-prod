@@ -13,6 +13,7 @@ from dataclasses import dataclass, asdict, field
 from typing import Optional
 
 from core.llm import analyze_with_llm
+from core.context import extract_source_context, clear_cache
 
 
 @dataclass
@@ -147,9 +148,13 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False) -> Deb
 
     file_path, line_number, function_name = _extract_location(traceback_text)
 
+    # Extract surgical source context (±5 lines around each error frame)
+    source_context = extract_source_context(traceback_text)
+
     # TIER 4: Deep flag bypasses regex entirely
     if deep:
-        llm_result = analyze_with_llm(traceback_text, deep=True)
+        llm_result = analyze_with_llm(traceback_text, deep=True, source_context=source_context)
+        clear_cache()
         if llm_result and "root_cause" in llm_result:
             return _build_report_from_llm(
                 llm_result, error_type, error_message,
@@ -158,7 +163,8 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False) -> Deb
 
     # TIER 3: Haiku flag bypasses regex entirely
     if haiku:
-        llm_result = analyze_with_llm(traceback_text, haiku=True)
+        llm_result = analyze_with_llm(traceback_text, haiku=True, source_context=source_context)
+        clear_cache()
         if llm_result and "root_cause" in llm_result:
             return _build_report_from_llm(
                 llm_result, error_type, error_message,
@@ -182,7 +188,8 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False) -> Deb
         )
 
     # TIER 2: Grok Fast fallback
-    llm_result = analyze_with_llm(traceback_text)
+    llm_result = analyze_with_llm(traceback_text, source_context=source_context)
+    clear_cache()
     if llm_result and "root_cause" in llm_result:
         return _build_report_from_llm(
             llm_result, error_type, error_message,
