@@ -23,7 +23,7 @@ def init_db():
         )
     ''')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_hash ON analyses(tb_hash)')
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_snippet ON analyses(tb_snippet(100))')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_snippet ON analyses(tb_snippet)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_time ON analyses(timestamp)')
     conn.commit()
     conn.close()
@@ -33,7 +33,7 @@ def query_similar(tb_snippet: str, limit: int = 3) -> List[Dict[str, Any]]:
     init_db()  # Ensure DB exists
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    search_term = f&quot;%{tb_snippet[:100]}%&quot;
+    search_term = f'%{tb_snippet[:100]}%'
     cursor.execute('''
         SELECT * FROM analyses 
         WHERE tb_snippet LIKE ? 
