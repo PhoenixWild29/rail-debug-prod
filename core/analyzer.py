@@ -13,6 +13,7 @@ from dataclasses import dataclass, asdict, field
 from typing import Optional
 
 from core.llm import analyze_with_llm
+from core.context import extract_context
 from core.context import extract_source_context, clear_cache
 
 
