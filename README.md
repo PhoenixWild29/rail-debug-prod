@@ -45,3 +45,12 @@ Infra
 Notes
 - Indexing is not performed in-request. Initialize Weaviate and collection out-of-band.
 - If backends are not configured, API returns 400/500; tests override dependencies.
+
+## Learning Loop (--memory flag)
+
+- **Default: Enabled**
+- SQLite DB (`rail_debug_memory.db`) stores past analyses by normalized traceback hash/snippet.
+- Pre-analysis: Injects top 3 similar past fixes into LLM prompt.
+- Post-analysis: Stores new analysis (confidence, success).
+- Patterns: filename:line collapsed, SHA256 hash for uniqueness.
+- CLI: `python cli.py --demo --memory` (default) or `--no-memory` to disable.

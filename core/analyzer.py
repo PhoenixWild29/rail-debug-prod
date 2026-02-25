@@ -21,6 +21,9 @@ from core.context import extract_source_context, clear_cache
 from core.chaining import parse_exception_chain, is_chained_traceback, ExceptionChain
 from core.git_blame import get_git_context_for_traceback, format_git_context_for_prompt
 
+from core.memory import query_similar, insert_analysis
+from utils.normalize import normalize_traceback
+
 
 @dataclass
 class DebugReport:
@@ -436,7 +439,7 @@ def _build_report_from_llm(llm_result: dict, error_type: str, error_message: str
     )
 
 
-def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, project_path: str = None, no_git: bool = False) -> DebugReport:
+def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, project_path: str = None, no_git: bool = False, use_memory: bool = True) -> DebugReport:
     """
     Quad-Tier Cascading Analysis with optional Project-Aware Mode.
 
@@ -481,6 +484,16 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, projec
         from core.project import get_project_profile
         profile = get_project_profile(project_path)
         project_context = profile.format_for_prompt()
+    
+    tb_hash, tb_snippet = normalize_traceback(traceback_text)
+    past_context = ""
+    if use_memory:
+        past_analyses = query_similar(tb_snippet)
+        if past_analyses:
+            past_context = "Past similar analyses:\n" + "\n".join(
+                f"Language: {r['language']}, Severity: {r['severity']}, Cause: {r['root_cause'][:100]}..., Fix: {r['suggested_fix'][:100]}... (conf: {r['confidence']:.1f}, success: {r['success']})"
+                for r in past_analyses
+            )
 
     # Combine all context for LLM
     full_source_context = source_context or ""
