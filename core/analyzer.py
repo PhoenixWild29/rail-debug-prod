@@ -240,14 +240,17 @@ def _build_report_from_llm(llm_result: dict, error_type: str, error_message: str
     )
 
 
-def analyze(traceback_text: str, deep: bool = False, haiku: bool = False) -> DebugReport:
+def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, project_path: str = None) -> DebugReport:
     """
-    Quad-Tier Cascading Analysis.
+    Quad-Tier Cascading Analysis with optional Project-Aware Mode.
 
     1. Regex match (Tier 1 — free/instant)
     2. If miss + default → xAI Grok Fast (Tier 2)
     3. If --haiku → Claude 3.5 Haiku (Tier 3)
     4. If --deep → Claude 3.7 Sonnet (Tier 4)
+
+    If project_path is provided, scans the project for language, framework,
+    and dependency context to inject into LLM prompts for precise fixes.
     """
     lines = traceback_text.strip().splitlines()
     error_line = lines[-1] if lines else ""
@@ -268,9 +271,16 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False) -> Deb
     # Extract surgical source context (±5 lines around each error frame)
     source_context = extract_source_context(traceback_text)
 
+    # Project-Aware Mode: scan project for dependency/framework context
+    project_context = ""
+    if project_path:
+        from core.project import get_project_profile
+        profile = get_project_profile(project_path)
+        project_context = profile.format_for_prompt()
+
     # TIER 4: Deep flag bypasses regex entirely
     if deep:
-        llm_result = analyze_with_llm(traceback_text, deep=True, source_context=source_context)
+        llm_result = analyze_with_llm(traceback_text, deep=True, source_context=source_context, project_context=project_context)
         clear_cache()
         if llm_result and "root_cause" in llm_result:
             return _build_report_from_llm(
@@ -280,7 +290,7 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False) -> Deb
 
     # TIER 3: Haiku flag bypasses regex entirely
     if haiku:
-        llm_result = analyze_with_llm(traceback_text, haiku=True, source_context=source_context)
+        llm_result = analyze_with_llm(traceback_text, haiku=True, source_context=source_context, project_context=project_context)
         clear_cache()
         if llm_result and "root_cause" in llm_result:
             return _build_report_from_llm(
@@ -305,7 +315,7 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False) -> Deb
         )
 
     # TIER 2: Grok Fast fallback
-    llm_result = analyze_with_llm(traceback_text, source_context=source_context)
+    llm_result = analyze_with_llm(traceback_text, source_context=source_context, project_context=project_context)
     clear_cache()
     if llm_result and "root_cause" in llm_result:
         return _build_report_from_llm(
@@ -328,9 +338,9 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False) -> Deb
     )
 
 
-def analyze_to_json(traceback_text: str, deep: bool = False, haiku: bool = False) -> str:
+def analyze_to_json(traceback_text: str, deep: bool = False, haiku: bool = False, project_path: str = None) -> str:
     """Analyze and return JSON string."""
-    report = analyze(traceback_text, deep=deep, haiku=haiku)
+    report = analyze(traceback_text, deep=deep, haiku=haiku, project_path=project_path)
     d = asdict(report)
     d.pop("raw_traceback")
     return json.dumps(d, indent=2)
