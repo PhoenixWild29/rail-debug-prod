@@ -22,6 +22,8 @@ Usage:
     python cli.py --demo --lang go              # Go panic demo
     python cli.py --demo --lang java            # Java/Kotlin NPE demo
     python cli.py --demo --lang solidity        # Solidity revert demo
+    python cli.py --serve                       # Launch API server (port 8000)
+    python cli.py --serve --port 9000           # API server on custom port
 """
 
 import argparse
@@ -195,12 +197,33 @@ def main():
         "--lang", "-l", type=str, choices=["go", "java", "kotlin", "solidity"],
         help="Language for --demo: go | java | kotlin | solidity"
     )
+    parser.add_argument(
+        "--serve", action="store_true",
+        help="Launch the Rail Debug API server (FastAPI + Uvicorn)"
+    )
+    parser.add_argument(
+        "--port", type=int, default=8000,
+        help="Port for --serve mode (default: 8000)"
+    )
     args = parser.parse_args()
 
     # Set git disable flag if requested
     if args.no_git:
         import os
         os.environ["RAIL_NO_GIT"] = "1"
+
+    # SERVER MODE — launch FastAPI
+    if args.serve:
+        import uvicorn
+        print(f"""
+╔══════════════════════════════════════════════╗
+║  🚀 RAIL DEBUG API SERVER                     ║
+║  Port: {args.port:<38}║
+║  Docs: http://localhost:{args.port}/docs{' ' * (27 - len(str(args.port)))}║
+╚══════════════════════════════════════════════╝
+""")
+        uvicorn.run("server:app", host="0.0.0.0", port=args.port, reload=False)
+        sys.exit(0)
 
     # SCAN MODE — display project profile and exit
     if args.scan:
