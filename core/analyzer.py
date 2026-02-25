@@ -1,14 +1,17 @@
 """
-Core error analyzer — parses tracebacks and returns structured debug reports.
-Lightweight. No external AI API calls yet (Phase 1 = pattern matching).
-Phase 2 will add LLM-powered root cause analysis.
+Core error analyzer — Tri-State Cascading Engine.
+
+Tier 1: 9-pattern regex (instant/free)
+Tier 2: Claude 4.5 Haiku (cheap/fast — auto-fallback on regex miss)
+Tier 3: Claude 4.6 Sonnet/Opus (deep analysis — explicit --deep flag)
 """
 
 import re
 import json
-import sys
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from typing import Optional
+
+from core.llm import analyze_with_llm
 
 
 @dataclass
@@ -22,6 +25,9 @@ class DebugReport:
     suggested_fix: str
     severity: str  # low | medium | high | critical
     raw_traceback: str
+    tier: int = 1  # 1=regex, 2=haiku, 3=sonnet/opus
+    model: Optional[str] = None
+    architecture_notes: Optional[str] = None
 
 
 # Common Python error patterns → quick diagnosis
@@ -99,12 +105,17 @@ def _match_pattern(error_line: str) -> Optional[dict]:
     return None
 
 
-def analyze(traceback_text: str) -> DebugReport:
-    """Analyze a traceback string and return a structured DebugReport."""
+def analyze(traceback_text: str, deep: bool = False) -> DebugReport:
+    """
+    Tri-State Cascading Analysis.
+    
+    1. Regex match (Tier 1 — free/instant)
+    2. If miss + not deep → Claude 4.5 Haiku (Tier 2)
+    3. If --deep → Claude 4.6 Sonnet/Opus (Tier 3)
+    """
     lines = traceback_text.strip().splitlines()
-
-    # Extract error type and message from last line
     error_line = lines[-1] if lines else ""
+
     if ":" in error_line:
         error_type, _, error_message = error_line.partition(":")
         error_type = error_type.strip()
@@ -114,33 +125,77 @@ def analyze(traceback_text: str) -> DebugReport:
         error_message = ""
 
     file_path, line_number, function_name = _extract_location(traceback_text)
+
+    # TIER 3: Deep flag bypasses regex entirely
+    if deep:
+        llm_result = analyze_with_llm(traceback_text, deep=True)
+        if llm_result and "root_cause" in llm_result:
+            return DebugReport(
+                error_type=llm_result.get("error_type", error_type),
+                error_message=llm_result.get("error_message", error_message),
+                file_path=llm_result.get("file_path", file_path),
+                line_number=llm_result.get("line_number", line_number),
+                function_name=llm_result.get("function_name", function_name),
+                root_cause=llm_result["root_cause"],
+                suggested_fix=llm_result.get("suggested_fix", ""),
+                severity=llm_result.get("severity", "medium"),
+                raw_traceback=traceback_text,
+                tier=llm_result.get("_tier", 3),
+                model=llm_result.get("_model"),
+                architecture_notes=llm_result.get("architecture_notes"),
+            )
+
+    # TIER 1: Regex
     matched = _match_pattern(error_line)
-
     if matched:
-        root_cause = matched["root_cause"]
-        suggested_fix = matched["suggested_fix"]
-        severity = matched["severity"]
-    else:
-        root_cause = f"Unrecognized error: {error_type}"
-        suggested_fix = "Inspect the traceback manually or escalate to Phase 2 (LLM analysis)"
-        severity = "medium"
+        return DebugReport(
+            error_type=error_type,
+            error_message=error_message,
+            file_path=file_path,
+            line_number=line_number,
+            function_name=function_name,
+            root_cause=matched["root_cause"],
+            suggested_fix=matched["suggested_fix"],
+            severity=matched["severity"],
+            raw_traceback=traceback_text,
+            tier=1,
+        )
 
+    # TIER 2: Haiku fallback
+    llm_result = analyze_with_llm(traceback_text, deep=False)
+    if llm_result and "root_cause" in llm_result:
+        return DebugReport(
+            error_type=llm_result.get("error_type", error_type),
+            error_message=llm_result.get("error_message", error_message),
+            file_path=llm_result.get("file_path", file_path),
+            line_number=llm_result.get("line_number", line_number),
+            function_name=llm_result.get("function_name", function_name),
+            root_cause=llm_result["root_cause"],
+            suggested_fix=llm_result.get("suggested_fix", ""),
+            severity=llm_result.get("severity", "medium"),
+            raw_traceback=traceback_text,
+            tier=llm_result.get("_tier", 2),
+            model=llm_result.get("_model"),
+        )
+
+    # FALLBACK: No LLM available
     return DebugReport(
         error_type=error_type,
         error_message=error_message,
         file_path=file_path,
         line_number=line_number,
         function_name=function_name,
-        root_cause=root_cause,
-        suggested_fix=suggested_fix,
-        severity=severity,
+        root_cause=f"Unrecognized error: {error_type} (LLM unavailable — set ANTHROPIC_API_KEY in .env)",
+        suggested_fix="Configure .env with your Anthropic API key to enable AI analysis",
+        severity="medium",
         raw_traceback=traceback_text,
+        tier=0,
     )
 
 
-def analyze_to_json(traceback_text: str) -> str:
+def analyze_to_json(traceback_text: str, deep: bool = False) -> str:
     """Analyze and return JSON string."""
-    report = analyze(traceback_text)
+    report = analyze(traceback_text, deep=deep)
     d = asdict(report)
-    d.pop("raw_traceback")  # Keep output clean
+    d.pop("raw_traceback")
     return json.dumps(d, indent=2)
