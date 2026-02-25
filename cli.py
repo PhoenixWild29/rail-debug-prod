@@ -15,11 +15,14 @@ Usage:
     python cli.py --json                        # JSON output
     python cli.py --project ./myapp --file e.log  # Project-aware analysis
     python cli.py --scan ./myapp                # Scan project profile
+    python cli.py --file error.log --chain      # Chained exception analysis
+    python cli.py --batch errors.log            # Multi-error batch analysis
+    python cli.py --batch errors.log --deep     # Batch + deep analysis
 """
 
 import argparse
 import sys
-from core.analyzer import analyze, analyze_to_json
+from core.analyzer import analyze, analyze_to_json, analyze_chained
 
 
 DEMO_TRACEBACK = """Traceback (most recent call last):
@@ -28,6 +31,31 @@ DEMO_TRACEBACK = """Traceback (most recent call last):
   File "blockchain.py", line 5, in <module>
     import solana
 ModuleNotFoundError: No module named 'solana'"""
+
+DEMO_CHAINED_TRACEBACK = """Traceback (most recent call last):
+  File "db/connection.py", line 23, in connect
+    conn = psycopg2.connect(host=db_host, port=5432)
+  File "psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "api/routes.py", line 45, in get_user
+    user = await db.fetch_user(user_id)
+  File "services/user_service.py", line 67, in fetch_user
+    raise DatabaseError("Failed to fetch user") from e
+DatabaseError: Failed to fetch user
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "api/middleware.py", line 12, in error_handler
+    response = await handler(request)
+  File "api/routes.py", line 48, in get_user
+    raise HTTPException(status_code=503, detail="Service unavailable")
+HTTPException: 503 Service Unavailable"""
 
 DEMO_DEEP_TRACEBACK = """Traceback (most recent call last):
   File "api/routes.py", line 156, in process_transaction
@@ -113,6 +141,14 @@ def main():
         "--scan", "-s", type=str, metavar="PATH",
         help="Scan a project directory and display its profile (no error analysis)"
     )
+    parser.add_argument(
+        "--chain", "-c", action="store_true",
+        help="Chain-aware analysis: detect and trace exception chains"
+    )
+    parser.add_argument(
+        "--batch", "-b", type=str, metavar="LOGFILE",
+        help="Batch mode: extract and analyze all errors in a log file"
+    )
     args = parser.parse_args()
 
     # SCAN MODE — display project profile and exit
@@ -126,6 +162,40 @@ def main():
 
 {profile.format_for_prompt()}
 """)
+        return
+
+    # BATCH MODE — analyze all errors in a log file
+    if args.batch:
+        from core.batch import analyze_batch
+        with open(args.batch, "r") as f:
+            content = f.read()
+        project = args.project if args.project else None
+        result = analyze_batch(content, deep=args.deep, haiku=args.haiku, project_path=project)
+
+        if result.total_errors == 0:
+            print("\n✅ No tracebacks found in the file.")
+            return
+
+        if args.json:
+            import json
+            out = {
+                "total_errors": result.total_errors,
+                "severity_counts": result.severity_counts,
+                "elapsed_seconds": round(result.elapsed_seconds, 2),
+                "errors": [],
+            }
+            for r in result.reports:
+                from dataclasses import asdict
+                d = asdict(r)
+                d.pop("raw_traceback")
+                out["errors"].append(d)
+            print(json.dumps(out, indent=2))
+        else:
+            for i, report in enumerate(result.reports, 1):
+                print(f"\n{'═' * 50}")
+                print(f"  Error {i}/{result.total_errors}")
+                print(format_report_pretty(report))
+            print(result.format_summary())
         return
 
     # SENTINEL MODE
@@ -143,7 +213,12 @@ def main():
 
     # SINGLE ANALYSIS MODE
     if args.demo:
-        traceback_text = DEMO_DEEP_TRACEBACK if args.deep else DEMO_TRACEBACK
+        if args.chain:
+            traceback_text = DEMO_CHAINED_TRACEBACK
+        elif args.deep:
+            traceback_text = DEMO_DEEP_TRACEBACK
+        else:
+            traceback_text = DEMO_TRACEBACK
     elif args.file:
         with open(args.file, "r") as f:
             traceback_text = f.read()
@@ -160,6 +235,28 @@ def main():
 
     # Analyze
     project = args.project if args.project else None
+
+    # CHAIN MODE — detect and trace exception chains
+    if args.chain:
+        from core.chaining import is_chained_traceback
+        chained_report = analyze_chained(traceback_text, deep=args.deep, haiku=args.haiku, project_path=project)
+
+        if args.json:
+            print(chained_report.to_json())
+        else:
+            if chained_report.is_chained:
+                print(f"\n{chained_report.chain_summary}")
+            if project:
+                from core.project import get_project_profile
+                proj = get_project_profile(project)
+                print(f"\n📦 Project: {proj.name} | {', '.join(proj.languages)} | {', '.join(proj.frameworks[:5])}")
+            for i, report in enumerate(chained_report.reports):
+                if chained_report.is_chained:
+                    label = "🔗 ROOT CAUSE" if i == 0 else f"🔗 Chain Link {i + 1}"
+                    print(f"\n{'─' * 40}\n  {label}")
+                print(format_report_pretty(report))
+        return
+
     if args.json:
         print(analyze_to_json(traceback_text, deep=args.deep, haiku=args.haiku, project_path=project))
     else:

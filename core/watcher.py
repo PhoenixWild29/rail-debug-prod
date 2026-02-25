@@ -26,6 +26,9 @@ from core.analyzer import analyze
 TRACEBACK_START = re.compile(r"^Traceback \(most recent call last\):")
 TRACEBACK_FILE_LINE = re.compile(r"^\s+File ")
 ERROR_LINE = re.compile(r"^[A-Za-z][\w.]*(?:Error|Exception|Warning|Exit).*:")
+CHAIN_SEPARATOR = re.compile(
+    r"^\s*(?:The above exception was the direct cause|During handling of the above exception)"
+)
 
 
 class _LogHandler(FileSystemEventHandler):
@@ -66,6 +69,7 @@ class Sentinel:
         self._running = False
         self._buffer = []
         self._in_traceback = False
+        self._in_chain = False
         self._error_count = 0
         self._file_pos = 0
 
@@ -77,6 +81,7 @@ class Sentinel:
         traceback_text = "\n".join(self._buffer)
         self._buffer = []
         self._in_traceback = False
+        self._in_chain = False
         self._error_count += 1
 
         timestamp = time.strftime("%H:%M:%S")
@@ -115,18 +120,32 @@ class Sentinel:
         print(f"{'─' * 50}")
 
     def _process_line(self, line: str):
-        """State machine: detect traceback boundaries."""
+        """State machine: detect traceback boundaries (chain-aware)."""
         stripped = line.rstrip()
 
         if TRACEBACK_START.match(stripped):
-            if self._in_traceback and self._buffer:
+            if self._in_traceback and self._buffer and not self._in_chain:
                 self._flush_traceback()
+            elif self._in_chain:
+                # Continuation of a chained traceback — keep buffering
+                self._buffer.append(stripped)
+                self._in_chain = False
+                return
             self._in_traceback = True
-            self._buffer = [stripped]
+            self._buffer = [stripped] if not self._buffer else self._buffer + [stripped]
             return
 
         if self._in_traceback:
+            # Check for chain separator — don't flush, keep buffering
+            if CHAIN_SEPARATOR.match(stripped):
+                self._buffer.append(stripped)
+                self._in_chain = True
+                return
+
             self._buffer.append(stripped)
+            if self._in_chain:
+                # After chain separator, expect "Traceback..." or blank lines
+                return
             if stripped and not stripped.startswith(" ") and not TRACEBACK_START.match(stripped):
                 if ERROR_LINE.match(stripped) or not TRACEBACK_FILE_LINE.match(stripped):
                     self._flush_traceback()
