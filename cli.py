@@ -205,7 +205,7 @@ def main():
         "--port", type=int, default=8000,
         help="Port for --serve mode (default: 8000)"
     )
-    args = parser.parse_args()
+    parser.add_argument('--memory', default=True, help='Enable learning loop SQLite memory/pattern recall (default: True)')\n    parser.add_argument('--no-memory', dest='memory', action='store_false')\n    args = parser.parse_args()
 
     # Set git disable flag if requested
     if args.no_git:
@@ -315,7 +315,7 @@ def main():
     # CHAIN MODE — detect and trace exception chains
     if args.chain:
         from core.chaining import is_chained_traceback
-        chained_report = analyze_chained(traceback_text, deep=args.deep, haiku=args.haiku, project_path=project)
+        chained_report = analyze_chained(traceback_text, deep=args.deep, haiku=args.haiku, project_path=project, use_memory=args.memory)
 
         if args.json:
             print(chained_report.to_json())
@@ -334,9 +334,9 @@ def main():
         return
 
     if args.json:
-        print(analyze_to_json(traceback_text, deep=args.deep, haiku=args.haiku, project_path=project))
+        print(analyze_to_json(traceback_text, deep=args.deep, haiku=args.haiku, project_path=project, use_memory=args.memory))
     else:
-        report = analyze(traceback_text, deep=args.deep, haiku=args.haiku, project_path=project)
+        report = analyze(traceback_text, deep=args.deep, haiku=args.haiku, project_path=project, use_memory=args.memory)
         if project:
             from core.project import get_project_profile
             proj = get_project_profile(project)
