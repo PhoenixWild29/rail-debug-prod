@@ -49,6 +49,16 @@ NODE_FRAME = re.compile(r'at\s+(?:.+?\s+\()?(.+?):(\d+):\d+\)?')
 # Also matches backtrace frames like: 0: app::module::function at ./src/main.rs:42:5
 RUST_FRAME = re.compile(r'(?:at\s+)?(\S+\.rs):(\d+)(?::\d+)?')
 
+# Go: tab-indented file reference in goroutine/panic output
+#   \t/path/to/main.go:42 +0x18
+GO_FRAME = re.compile(r'\t(.+\.go):(\d+)')
+
+# Java/Kotlin: at com.example.Class.method(File.java:42) or (File.kt:42)
+JAVA_FRAME = re.compile(r'at\s+\S+\(([\w./\-$]+\.(?:java|kt)):(\d+)\)')
+
+# Solidity: --> contracts/MyContract.sol:42:5 (solc compiler error format)
+SOLIDITY_FRAME = re.compile(r'-->\s+(.+\.sol):(\d+)')
+
 # Default context window: ±5 lines around the error
 CONTEXT_RADIUS = 5
 
@@ -57,13 +67,16 @@ LANGUAGE_SIGNATURES = {
     "python": [r'Traceback \(most recent call last\)', r'File ".+?", line \d+'],
     "node": [r'at\s+.+?\(.+?:\d+:\d+\)', r'at\s+\S+:\d+:\d+', r'Error:.*\n\s+at\s'],
     "rust": [r"thread '.*' panicked", r'\.rs:\d+:\d+', r'stack backtrace:'],
+    "go": [r'goroutine \d+ \[', r'\.go:\d+', r'panic:'],
+    "java": [r'Exception in thread "', r'at \S+\([\w$]+\.(?:java|kt):\d+\)', r'(?:java|kotlin)\.'],
+    "solidity": [r'execution reverted', r'Transaction reverted', r'out of gas', r'\.sol:\d+'],
 }
 
 
 def detect_language(traceback_text: str) -> str:
     """
     Auto-detect the language/runtime from traceback format.
-    Returns: 'python' | 'node' | 'rust' | 'unknown'
+    Returns: 'python' | 'node' | 'rust' | 'go' | 'java' | 'solidity' | 'unknown'
     """
     scores = {}
     for lang, patterns in LANGUAGE_SIGNATURES.items():
@@ -115,6 +128,43 @@ def extract_frames_rust(traceback_text: str) -> List[tuple]:
     return frames
 
 
+def extract_frames_go(traceback_text: str) -> List[tuple]:
+    """
+    Extract (file_path, line_number) from Go goroutine/panic output.
+    Filters out Go stdlib frames to focus on user code.
+    """
+    frames = []
+    for m in GO_FRAME.finditer(traceback_text):
+        path = m.group(1)
+        # Skip Go stdlib internals
+        if "/usr/local/go/" in path or "GOROOT" in path:
+            continue
+        frames.append((path, int(m.group(2))))
+    return frames
+
+
+def extract_frames_java(traceback_text: str) -> List[tuple]:
+    """
+    Extract (file_path, line_number) from Java/Kotlin JVM stack traces.
+    Handles both .java and .kt source files.
+    """
+    frames = []
+    for m in JAVA_FRAME.finditer(traceback_text):
+        frames.append((m.group(1), int(m.group(2))))
+    return frames
+
+
+def extract_frames_solidity(traceback_text: str) -> List[tuple]:
+    """
+    Extract (file_path, line_number) from Solidity/solc compiler error output.
+    Format: --> contracts/MyContract.sol:42:5
+    """
+    frames = []
+    for m in SOLIDITY_FRAME.finditer(traceback_text):
+        frames.append((m.group(1), int(m.group(2))))
+    return frames
+
+
 def extract_frames(traceback_text: str) -> List[tuple]:
     """
     Universal frame extractor — auto-detects language and routes
@@ -128,9 +178,16 @@ def extract_frames(traceback_text: str) -> List[tuple]:
         return extract_frames_node(traceback_text)
     elif lang == "rust":
         return extract_frames_rust(traceback_text)
+    elif lang == "go":
+        return extract_frames_go(traceback_text)
+    elif lang == "java":
+        return extract_frames_java(traceback_text)
+    elif lang == "solidity":
+        return extract_frames_solidity(traceback_text)
 
     # Unknown — try all parsers, return first non-empty result
-    for parser in (extract_frames_python, extract_frames_node, extract_frames_rust):
+    for parser in (extract_frames_python, extract_frames_node, extract_frames_rust,
+                   extract_frames_go, extract_frames_java):
         frames = parser(traceback_text)
         if frames:
             return frames
