@@ -207,6 +207,28 @@ def main():
     )
     parser.add_argument('--memory', default=True, help='Enable learning loop SQLite memory/pattern recall (default: True)')\n    parser.add_argument('--no-memory', dest='memory', action='store_false')\n    args = parser.parse_args()
 
+    # Multi-Repo Orchestrator
+    if args.portfolio or args.multi_repo or args.repo_dir:
+        repos = []
+        if args.portfolio:
+            from core.multi import parse_portfolio_repos
+            repos.extend(parse_portfolio_repos())
+        if args.multi_repo:
+            repos.extend([p.strip() for p in args.multi_repo.split(',') if p.strip()])
+        if args.repo_dir:
+            from core.multi import find_repos_in_dir
+            repos.extend(find_repos_in_dir(args.repo_dir))
+        repos = list(set(repos))
+        from core.multi import scan_multi_repos, format_multi_pretty, report_to_json, report_to_md
+        report = scan_multi_repos(repos, use_memory=args.memory)
+        if args.report_json:
+            print(report_to_json(report))
+        elif args.report_md:
+            print(report_to_md(report))
+        else:
+            print(format_multi_pretty(report))
+        return
+
     # Set git disable flag if requested
     if args.no_git:
         import os

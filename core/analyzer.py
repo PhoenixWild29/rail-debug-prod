@@ -484,11 +484,12 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, projec
         from core.project import get_project_profile
         profile = get_project_profile(project_path)
         project_context = profile.format_for_prompt()
+    repo_id = os.path.basename(os.path.abspath(project_path).rstrip('/')) if project_path else None
     
     tb_hash, tb_snippet = normalize_traceback(traceback_text)
     past_context = ""
     if use_memory:
-        past_analyses = query_similar(tb_snippet)
+        past_analyses = query_similar(tb_snippet, repo_id=repo_id)
         if past_analyses:
             past_context = "Past similar analyses:\n" + "\n".join(
                 f"Language: {r['language']}, Severity: {r['severity']}, Cause: {r['root_cause'][:100]}..., Fix: {r['suggested_fix'][:100]}... (conf: {r['confidence']:.1f}, success: {r['success']})"
@@ -552,6 +553,30 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, projec
     llm_result = analyze_with_llm(traceback_text, source_context=full_source_context, project_context=project_context)
     clear_cache()
     if llm_result and "root_cause" in llm_result:
+        if use_memory:
+            lang = detect_language(traceback_text)
+            insert_analysis(
+                lang, tb_hash, tb_snippet,
+                llm_result.get("severity", "medium"),
+                "Tier 2 (Grok)",
+                llm_result["root_cause"],
+                llm_result.get("suggested_fix", ""),
+                llm_result.get("confidence", 0.9),
+                False,
+                repo_id
+            )
+        if use_memory:
+            lang = detect_language(traceback_text)
+            insert_analysis(
+                lang, tb_hash, tb_snippet,
+                llm_result.get("severity", "medium"),
+                "Tier 2 (Grok)",
+                llm_result["root_cause"],
+                llm_result.get("suggested_fix", ""),
+                llm_result.get("confidence", 0.9),
+                False,
+                repo_id
+            )
         return _attach_git(_build_report_from_llm(
             llm_result, error_type, error_message,
             file_path, line_number, function_name, traceback_text
