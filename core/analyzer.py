@@ -9,6 +9,7 @@ Tier 3: Anthropic Claude 3.5 Haiku (mid-tier via --haiku)
 Tier 4: Anthropic Claude 3.7 Sonnet (deep reasoning via --deep)
 """
 
+import os
 import re
 import json
 from dataclasses import dataclass, asdict, field
@@ -18,6 +19,7 @@ from core.llm import analyze_with_llm
 from core.context import extract_context, detect_language
 from core.context import extract_source_context, clear_cache
 from core.chaining import parse_exception_chain, is_chained_traceback, ExceptionChain
+from core.git_blame import get_git_context_for_traceback, format_git_context_for_prompt
 
 
 @dataclass
@@ -34,6 +36,8 @@ class DebugReport:
     tier: int = 1  # 1=regex, 2=grok, 3=haiku, 4=sonnet
     model: Optional[str] = None
     architecture_notes: Optional[str] = None
+    git_blame: Optional[str] = None  # Compact blame summary for CLI
+    git_context_raw: Optional[list] = field(default=None, repr=False)  # Raw GitContext objects (not serialized)
 
 
 # Common Python error patterns → quick diagnosis
@@ -272,6 +276,15 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, projec
     # Extract surgical source context (±5 lines around each error frame)
     source_context = extract_source_context(traceback_text)
 
+    # Git-Aware Mode: blame + diff context for error frames
+    git_disabled = os.environ.get("RAIL_NO_GIT", "")
+    if git_disabled:
+        git_contexts = []
+        git_prompt_context = ""
+    else:
+        git_contexts = get_git_context_for_traceback(traceback_text, max_frames=3)
+        git_prompt_context = format_git_context_for_prompt(git_contexts)
+
     # Project-Aware Mode: scan project for dependency/framework context
     project_context = ""
     if project_path:
@@ -279,30 +292,46 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, projec
         profile = get_project_profile(project_path)
         project_context = profile.format_for_prompt()
 
+    # Combine all context for LLM
+    full_source_context = source_context or ""
+    if git_prompt_context:
+        full_source_context = (full_source_context + "\n\n" + git_prompt_context).strip() if full_source_context else git_prompt_context
+
+    # Helper to attach git info to reports
+    def _attach_git(report: DebugReport) -> DebugReport:
+        if git_contexts:
+            blame_lines = []
+            for gc in git_contexts:
+                if gc.blame:
+                    blame_lines.append(gc.blame.format_compact())
+            report.git_blame = " | ".join(blame_lines) if blame_lines else None
+            report.git_context_raw = git_contexts
+        return report
+
     # TIER 4: Deep flag bypasses regex entirely
     if deep:
-        llm_result = analyze_with_llm(traceback_text, deep=True, source_context=source_context, project_context=project_context)
+        llm_result = analyze_with_llm(traceback_text, deep=True, source_context=full_source_context, project_context=project_context)
         clear_cache()
         if llm_result and "root_cause" in llm_result:
-            return _build_report_from_llm(
+            return _attach_git(_build_report_from_llm(
                 llm_result, error_type, error_message,
                 file_path, line_number, function_name, traceback_text
-            )
+            ))
 
     # TIER 3: Haiku flag bypasses regex entirely
     if haiku:
-        llm_result = analyze_with_llm(traceback_text, haiku=True, source_context=source_context, project_context=project_context)
+        llm_result = analyze_with_llm(traceback_text, haiku=True, source_context=full_source_context, project_context=project_context)
         clear_cache()
         if llm_result and "root_cause" in llm_result:
-            return _build_report_from_llm(
+            return _attach_git(_build_report_from_llm(
                 llm_result, error_type, error_message,
                 file_path, line_number, function_name, traceback_text
-            )
+            ))
 
     # TIER 1: Regex
     matched = _match_pattern(error_line)
     if matched:
-        return DebugReport(
+        return _attach_git(DebugReport(
             error_type=error_type,
             error_message=error_message,
             file_path=file_path,
@@ -313,16 +342,16 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, projec
             severity=matched["severity"],
             raw_traceback=traceback_text,
             tier=1,
-        )
+        ))
 
     # TIER 2: Grok Fast fallback
-    llm_result = analyze_with_llm(traceback_text, source_context=source_context, project_context=project_context)
+    llm_result = analyze_with_llm(traceback_text, source_context=full_source_context, project_context=project_context)
     clear_cache()
     if llm_result and "root_cause" in llm_result:
-        return _build_report_from_llm(
+        return _attach_git(_build_report_from_llm(
             llm_result, error_type, error_message,
             file_path, line_number, function_name, traceback_text
-        )
+        ))
 
     # FALLBACK: No LLM available
     return DebugReport(
@@ -344,6 +373,7 @@ def analyze_to_json(traceback_text: str, deep: bool = False, haiku: bool = False
     report = analyze(traceback_text, deep=deep, haiku=haiku, project_path=project_path)
     d = asdict(report)
     d.pop("raw_traceback")
+    d.pop("git_context_raw", None)  # Not serializable — use git_blame string instead
     return json.dumps(d, indent=2)
 
 

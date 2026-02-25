@@ -52,6 +52,8 @@ SYSTEM_PROMPT = """You are Rail Debug, an expert AI debugging engine. Analyze th
 
 If source code context is provided alongside the traceback, use it to give a more precise root cause and fix. Reference specific variable names, logic errors, or misconfigurations visible in the code.
 
+If git blame/diff context is provided, use it to identify who last modified the error line, when, and what changed. Reference the commit hash and author when relevant to the root cause.
+
 Be precise. Be actionable. No markdown, no explanation outside the JSON."""
 
 DEEP_SYSTEM_PROMPT = """You are Rail Debug in DEEP ANALYSIS mode. You are an elite debugging architect. Analyze the Python traceback and return ONLY a JSON object with these exact keys:
@@ -69,6 +71,8 @@ DEEP_SYSTEM_PROMPT = """You are Rail Debug in DEEP ANALYSIS mode. You are an eli
 }
 
 If source code context is provided, analyze the actual code logic — identify variable states, control flow issues, and architectural antipatterns visible in the surrounding lines. Reference specific code when diagnosing.
+
+If git blame/diff context is provided, trace the breaking change: identify the commit, author, and what was modified. Determine if the error was introduced by a recent change vs. a latent bug exposed by new code.
 
 Think deeply. Trace causation chains. Identify systemic patterns. No markdown outside the JSON."""
 
