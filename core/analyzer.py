@@ -436,7 +436,7 @@ def _build_report_from_llm(llm_result: dict, error_type: str, error_message: str
     )
 
 
-def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, project_path: str = None) -> DebugReport:
+def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, project_path: str = None, no_git: bool = False) -> DebugReport:
     """
     Quad-Tier Cascading Analysis with optional Project-Aware Mode.
 
@@ -467,7 +467,7 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, projec
     source_context = extract_source_context(traceback_text)
 
     # Git-Aware Mode: blame + diff context for error frames
-    git_disabled = os.environ.get("RAIL_NO_GIT", "")
+    git_disabled = no_git or os.environ.get("RAIL_NO_GIT", "")
     if git_disabled:
         git_contexts = []
         git_prompt_context = ""

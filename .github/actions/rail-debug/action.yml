@@ -1,0 +1,55 @@
+name: 'Rail Debug — AI Error Analyzer'
+description: 'Analyze Python/Node/Rust/Go/Java/Solidity tracebacks using the Quad-Tier AI engine'
+branding:
+  icon: 'search'
+  color: 'blue'
+
+inputs:
+  traceback:
+    description: 'Raw error traceback to analyze (mutually exclusive with traceback_file)'
+    required: false
+    default: ''
+  traceback_file:
+    description: 'Path to a file containing the traceback to analyze'
+    required: false
+    default: ''
+  mode:
+    description: 'Analysis depth — auto (Tier 1-2, default), haiku (Tier 3), deep (Tier 4 Sonnet)'
+    required: false
+    default: 'auto'
+  fail_on_critical:
+    description: 'Exit non-zero if Rail Debug detects CRITICAL severity'
+    required: false
+    default: 'false'
+
+outputs:
+  severity:
+    description: 'Error severity: CRITICAL | HIGH | MEDIUM | LOW | INFO'
+    value: ${{ steps.analyze.outputs.severity }}
+  tier:
+    description: 'Analysis tier that resolved the error (1=regex, 2=Grok, 3=Haiku, 4=Sonnet)'
+    value: ${{ steps.analyze.outputs.tier }}
+  root_cause:
+    description: 'Root cause summary'
+    value: ${{ steps.analyze.outputs.root_cause }}
+  suggested_fix:
+    description: 'Suggested fix'
+    value: ${{ steps.analyze.outputs.suggested_fix }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Rail Debug dependencies
+      shell: bash
+      run: pip install -q -r ${{ github.action_path }}/../../../requirements.txt
+
+    - name: Run Rail Debug analysis
+      id: analyze
+      shell: bash
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+        RAIL_DEBUG_TRACEBACK: ${{ inputs.traceback }}
+        RAIL_DEBUG_TRACEBACK_FILE: ${{ inputs.traceback_file }}
+        RAIL_DEBUG_MODE: ${{ inputs.mode }}
+        RAIL_DEBUG_FAIL_ON_CRITICAL: ${{ inputs.fail_on_critical }}
+      run: python ${{ github.action_path }}/run_analysis.py
