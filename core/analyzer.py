@@ -1,12 +1,12 @@
 """
 Core error analyzer — Quad-Tier Universal Cascading Engine.
 
-Supports Python, Node.js/JavaScript, and Rust error analysis.
+Supports Python, Node.js/JavaScript, Rust, Go, Java/Kotlin, and Solidity.
 
-Tier 1: Regex patterns (instant/free) — Python + Node + Rust
+Tier 1: Regex patterns (instant/free) — all 6 languages
 Tier 2: xAI Grok Fast (cheap/fast default LLM)
-Tier 3: Anthropic Claude 3.5 Haiku (mid-tier via --haiku)
-Tier 4: Anthropic Claude 3.7 Sonnet (deep reasoning via --deep)
+Tier 3: Anthropic Claude Haiku 4.5 (mid-tier via --haiku)
+Tier 4: Anthropic Claude Sonnet 4.6 (deep reasoning via --deep)
 """
 
 import os
@@ -167,6 +167,169 @@ RUST_PATTERNS = {
     },
 }
 
+# ── Go Error Patterns ─────────────────────────────────────────────
+GO_PATTERNS = {
+    r"panic: runtime error: integer divide by zero": {
+        "root_cause": "Division by zero at runtime",
+        "suggested_fix": "Guard before dividing: if divisor == 0 { return/error }",
+        "severity": "critical",
+    },
+    r"panic: runtime error: index out of range \[(\d+)\] with length (\d+)": {
+        "root_cause": "Index out of range — accessed index {m1}, slice length is {m2}",
+        "suggested_fix": "Validate index before access: if i < len(slice) { ... }",
+        "severity": "critical",
+    },
+    r"panic: runtime error: invalid memory address or nil pointer dereference": {
+        "root_cause": "Nil pointer dereference — dereferenced an uninitialized pointer",
+        "suggested_fix": "Check for nil before use: if ptr != nil { ... }",
+        "severity": "critical",
+    },
+    r"panic: (.+)": {
+        "root_cause": "Go panic: {m1}",
+        "suggested_fix": "Use defer/recover for panic recovery, or fix the underlying condition",
+        "severity": "critical",
+    },
+    r"all goroutines are asleep - deadlock!": {
+        "root_cause": "Goroutine deadlock — all goroutines blocked waiting on each other",
+        "suggested_fix": "Check channel send/receive symmetry and mutex lock/unlock pairs",
+        "severity": "critical",
+    },
+    r"interface conversion: interface \{\} is (.+?), not (.+)": {
+        "root_cause": "Type assertion failed — value is {m1}, expected {m2}",
+        "suggested_fix": "Use two-value assertion: v, ok := x.({type}); if !ok { handle }",
+        "severity": "high",
+    },
+}
+
+# ── Java / Kotlin Error Patterns ──────────────────────────────────
+JAVA_PATTERNS = {
+    r"java\.lang\.NullPointerException": {
+        "root_cause": "Null pointer exception — method or field accessed on null object",
+        "suggested_fix": "Add null check before use, or use Optional<> for nullable values",
+        "severity": "critical",
+    },
+    r"java\.lang\.ArrayIndexOutOfBoundsException: Index (\d+) out of bounds for length (\d+)": {
+        "root_cause": "Array index {m1} out of bounds — array length is {m2}",
+        "suggested_fix": "Check index < array.length before access",
+        "severity": "high",
+    },
+    r"java\.lang\.ClassCastException: class (.+?) cannot be cast to class (.+?)": {
+        "root_cause": "Cannot cast {m1} to {m2} — incompatible types",
+        "suggested_fix": "Use instanceof check before casting: if (obj instanceof TargetType t) { ... }",
+        "severity": "high",
+    },
+    r"java\.lang\.StackOverflowError": {
+        "root_cause": "Stack overflow — infinite or excessively deep recursion",
+        "suggested_fix": "Add base case to recursive method or convert to iterative with explicit stack",
+        "severity": "critical",
+    },
+    r"java\.lang\.OutOfMemoryError: Java heap space": {
+        "root_cause": "JVM heap exhausted — insufficient memory for allocation",
+        "suggested_fix": "Increase heap with -Xmx flag, fix memory leaks, or reduce object retention",
+        "severity": "critical",
+    },
+    r"java\.io\.FileNotFoundException: (.+)": {
+        "root_cause": "File not found: {m1}",
+        "suggested_fix": "Verify file path — check working directory and path separators",
+        "severity": "high",
+    },
+    r"java\.util\.ConcurrentModificationException": {
+        "root_cause": "Collection modified while iterating — concurrent modification detected",
+        "suggested_fix": "Use Iterator.remove() or CopyOnWriteArrayList for safe concurrent iteration",
+        "severity": "high",
+    },
+    r"java\.lang\.IllegalArgumentException: (.+)": {
+        "root_cause": "Illegal argument: {m1}",
+        "suggested_fix": "Validate input before passing to the method",
+        "severity": "medium",
+    },
+    r"kotlin\.KotlinNullPointerException": {
+        "root_cause": "Kotlin null pointer exception — non-null type received null value",
+        "suggested_fix": "Use nullable type (Type?) with safe call (?.) or Elvis operator (?:)",
+        "severity": "critical",
+    },
+    r"kotlin\.UninitializedPropertyAccessException: (.+)": {
+        "root_cause": "Property accessed before initialization: {m1}",
+        "suggested_fix": "Ensure lateinit var is initialized before access, or switch to lazy { }",
+        "severity": "high",
+    },
+}
+
+# ── Solidity / EVM Error Patterns ─────────────────────────────────
+SOLIDITY_PATTERNS = {
+    r"revert(?:ed)?\s+(?:with reason string\s+)?['\"](.+?)['\"]": {
+        "root_cause": "Transaction reverted: {m1}",
+        "suggested_fix": "Check the require/revert condition — caller must meet contract preconditions",
+        "severity": "critical",
+    },
+    r"Transaction reverted without a reason": {
+        "root_cause": "Transaction reverted with no reason string — bare revert() or failed require(false)",
+        "suggested_fix": "Add descriptive reason to require(): require(condition, 'Descriptive reason')",
+        "severity": "critical",
+    },
+    r"out of gas": {
+        "root_cause": "Transaction ran out of gas",
+        "suggested_fix": "Increase gas limit, optimize loops/storage ops, or use estimateGas first",
+        "severity": "critical",
+    },
+    r"invalid opcode": {
+        "root_cause": "Invalid EVM opcode — usually a failing assert() or division by zero in Solidity < 0.8",
+        "suggested_fix": "Check assert() conditions and division-by-zero guards in the contract",
+        "severity": "critical",
+    },
+    r"execution reverted": {
+        "root_cause": "EVM execution reverted — a require(), revert(), or assert() condition failed",
+        "suggested_fix": "Inspect the failing condition — add reason strings to require() for easier debugging",
+        "severity": "critical",
+    },
+    r"SafeMath: (.+)": {
+        "root_cause": "SafeMath overflow/underflow: {m1}",
+        "suggested_fix": "Solidity >= 0.8 has built-in overflow protection. For older versions, upgrade or use checked arithmetic",
+        "severity": "critical",
+    },
+    r"caller is not the owner": {
+        "root_cause": "Access control failure — caller is not the contract owner",
+        "suggested_fix": "Ensure the calling address is the contract owner, or review onlyOwner modifier logic",
+        "severity": "critical",
+    },
+}
+
+
+def _get_error_line(traceback_text: str, lang: str) -> str:
+    """Extract the most relevant error line based on language conventions."""
+    lines = [l for l in traceback_text.strip().splitlines() if l.strip()]
+    if not lines:
+        return ""
+
+    # Go: panic line first (before goroutine header)
+    if lang == "go":
+        for line in lines:
+            if line.strip().startswith("panic:"):
+                return line.strip()
+        return lines[0].strip()
+
+    # Java/Kotlin: first line contains exception class (may be preceded by "Exception in thread...")
+    if lang == "java":
+        for line in lines:
+            line = line.strip()
+            if re.match(r'(?:java|kotlin|android)\.', line):
+                return line
+            m = re.search(r'Exception in thread "[^"]+" (.+)', line)
+            if m:
+                return m.group(1)
+        return lines[0].strip()
+
+    # Solidity: look for the revert/error line
+    if lang == "solidity":
+        for line in lines:
+            line = line.strip()
+            if any(kw in line.lower() for kw in ("revert", "out of gas", "invalid opcode", "execution reverted")):
+                return line
+        return lines[0].strip()
+
+    # Python/Node/Rust: error is on the last line
+    return lines[-1]
+
 
 def _extract_location(traceback_text: str) -> tuple:
     """Pull the last file/line/function from a traceback (multi-language)."""
@@ -201,6 +364,28 @@ def _extract_location(traceback_text: str) -> tuple:
             last = matches[-1]
             return last[0], int(last[1]), None
 
+    elif lang == "go":
+        # Tab-indented: \t/path/to/file.go:42
+        matches = re.findall(r'\t(.+\.go):(\d+)', traceback_text)
+        if matches:
+            last = matches[-1]
+            return last[0], int(last[1]), None
+
+    elif lang == "java":
+        # at com.example.Class.method(File.java:42) — first frame is innermost
+        matches = re.findall(r'at\s+(\S+)\(([\w./\-$]+\.(?:java|kt)):(\d+)\)', traceback_text)
+        if matches:
+            first = matches[0]
+            method = first[0].split(".")[-1]  # Last segment = method name
+            return first[1], int(first[2]), method
+
+    elif lang == "solidity":
+        # --> contracts/Contract.sol:42:5 (solc format)
+        matches = re.findall(r'-->\s+(.+\.sol):(\d+)', traceback_text)
+        if matches:
+            first = matches[0]
+            return first[0], int(first[1]), None
+
     return None, None, None
 
 
@@ -212,6 +397,12 @@ def _match_pattern(error_text: str, lang: str = "python") -> Optional[dict]:
         pattern_sets = [NODE_PATTERNS, KNOWN_PATTERNS]
     elif lang == "rust":
         pattern_sets = [RUST_PATTERNS, KNOWN_PATTERNS]
+    elif lang == "go":
+        pattern_sets = [GO_PATTERNS]
+    elif lang == "java":
+        pattern_sets = [JAVA_PATTERNS]
+    elif lang == "solidity":
+        pattern_sets = [SOLIDITY_PATTERNS]
 
     for patterns in pattern_sets:
         for pattern, template in patterns.items():
@@ -257,8 +448,10 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, projec
     If project_path is provided, scans the project for language, framework,
     and dependency context to inject into LLM prompts for precise fixes.
     """
-    lines = traceback_text.strip().splitlines()
-    error_line = lines[-1] if lines else ""
+    # Detect language first — needed for error line extraction
+    lang = detect_language(traceback_text)
+
+    error_line = _get_error_line(traceback_text, lang)
 
     if ":" in error_line:
         error_type, _, error_message = error_line.partition(":")
@@ -269,9 +462,6 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, projec
         error_message = ""
 
     file_path, line_number, function_name = _extract_location(traceback_text)
-
-    # Detect language for multi-language routing
-    lang = detect_language(traceback_text)
 
     # Extract surgical source context (±5 lines around each error frame)
     source_context = extract_source_context(traceback_text)
@@ -328,8 +518,9 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, projec
                 file_path, line_number, function_name, traceback_text
             ))
 
-    # TIER 1: Regex
-    matched = _match_pattern(error_line)
+    # TIER 1: Regex — Go/Java/Solidity errors appear at top of traceback, not last line
+    match_text = traceback_text if lang in ("go", "java", "solidity", "rust") else error_line
+    matched = _match_pattern(match_text, lang)
     if matched:
         return _attach_git(DebugReport(
             error_type=error_type,

@@ -19,6 +19,9 @@ Usage:
     python cli.py --batch errors.log            # Multi-error batch analysis
     python cli.py --batch errors.log --deep     # Batch + deep analysis
     python cli.py --file error.log --no-git     # Skip git blame/diff context
+    python cli.py --demo --lang go              # Go panic demo
+    python cli.py --demo --lang java            # Java/Kotlin NPE demo
+    python cli.py --demo --lang solidity        # Solidity revert demo
 """
 
 import argparse
@@ -67,13 +70,38 @@ DEMO_DEEP_TRACEBACK = """Traceback (most recent call last):
     resp = self._provider.make_request(body, commitment)
 RuntimeError: Transaction simulation failed: insufficient funds for rent"""
 
+DEMO_GO_TRACEBACK = """panic: runtime error: integer divide by zero
+
+goroutine 1 [running]:
+main.divide(...)
+\t/home/user/myapp/main.go:15 +0x18
+main.main()
+\t/home/user/myapp/main.go:22 +0x2f
+exit status 2"""
+
+DEMO_JAVA_TRACEBACK = """Exception in thread "main" java.lang.NullPointerException: Cannot invoke "String.length()" because "str" is null
+\tat com.example.UserService.processName(UserService.java:42)
+\tat com.example.UserService.createUser(UserService.java:28)
+\tat com.example.Main.main(Main.java:10)"""
+
+DEMO_SOLIDITY_TRACEBACK = """Error: VM Exception while processing transaction: reverted with reason string 'Insufficient balance'
+    at Context.<anonymous> (test/EscrowTest.js:54:7)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+--> contracts/Escrow.sol:87:9"""
+
+DEMO_LANG_MAP = {
+    "go": DEMO_GO_TRACEBACK,
+    "java": DEMO_JAVA_TRACEBACK,
+    "kotlin": DEMO_JAVA_TRACEBACK,
+    "solidity": DEMO_SOLIDITY_TRACEBACK,
+}
 
 TIER_LABELS = {
     0: "⚠️  OFFLINE (no LLM)",
     1: "⚡ TIER 1 — Regex (instant/free)",
     2: "🚀 TIER 2 — Grok Fast (default)",
-    3: "🧠 TIER 3 — Claude 3.5 Haiku (mid-tier)",
-    4: "🔬 TIER 4 — Claude 3.7 Sonnet (deep reasoning)",
+    3: "🧠 TIER 3 — Claude Haiku 4.5 (mid-tier)",
+    4: "🔬 TIER 4 — Claude Sonnet 4.6 (deep reasoning)",
 }
 
 
@@ -163,6 +191,10 @@ def main():
         "--no-git", action="store_true",
         help="Disable git blame/diff context injection"
     )
+    parser.add_argument(
+        "--lang", "-l", type=str, choices=["go", "java", "kotlin", "solidity"],
+        help="Language for --demo: go | java | kotlin | solidity"
+    )
     args = parser.parse_args()
 
     # Set git disable flag if requested
@@ -232,7 +264,9 @@ def main():
 
     # SINGLE ANALYSIS MODE
     if args.demo:
-        if args.chain:
+        if args.lang and args.lang in DEMO_LANG_MAP:
+            traceback_text = DEMO_LANG_MAP[args.lang]
+        elif args.chain:
             traceback_text = DEMO_CHAINED_TRACEBACK
         elif args.deep:
             traceback_text = DEMO_DEEP_TRACEBACK

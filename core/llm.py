@@ -37,7 +37,7 @@ TIER_4_MODEL = "claude-sonnet-4-6"
 
 XAI_BASE_URL = "https://api.x.ai/v1"
 
-SYSTEM_PROMPT = """You are Rail Debug, an expert AI debugging engine. Analyze the Python traceback provided and return ONLY a JSON object with these exact keys:
+SYSTEM_PROMPT = """You are Rail Debug, an expert AI debugging engine. Analyze the traceback or error provided (Python, Node.js, Rust, Go, Java, Kotlin, or Solidity) and return ONLY a JSON object with these exact keys:
 
 {
   "error_type": "the exception class name",
@@ -56,7 +56,7 @@ If git blame/diff context is provided, use it to identify who last modified the 
 
 Be precise. Be actionable. No markdown, no explanation outside the JSON."""
 
-DEEP_SYSTEM_PROMPT = """You are Rail Debug in DEEP ANALYSIS mode. You are an elite debugging architect. Analyze the Python traceback and return ONLY a JSON object with these exact keys:
+DEEP_SYSTEM_PROMPT = """You are Rail Debug in DEEP ANALYSIS mode. You are an elite debugging architect. Analyze the traceback or error (Python, Node.js, Rust, Go, Java, Kotlin, or Solidity) and return ONLY a JSON object with these exact keys:
 
 {
   "error_type": "the exception class name",
