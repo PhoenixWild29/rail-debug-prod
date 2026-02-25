@@ -17,6 +17,7 @@ from typing import Optional
 from core.llm import analyze_with_llm
 from core.context import extract_context, detect_language
 from core.context import extract_source_context, clear_cache
+from core.chaining import parse_exception_chain, is_chained_traceback, ExceptionChain
 
 
 @dataclass
@@ -344,3 +345,54 @@ def analyze_to_json(traceback_text: str, deep: bool = False, haiku: bool = False
     d = asdict(report)
     d.pop("raw_traceback")
     return json.dumps(d, indent=2)
+
+
+@dataclass
+class ChainedDebugReport:
+    """Analysis result for a chained exception — multiple linked reports."""
+    chain_summary: str
+    reports: list  # List[DebugReport] — one per chain link
+    root_cause_report: Optional[DebugReport] = None
+    final_report: Optional[DebugReport] = None
+    is_chained: bool = True
+
+    def to_json(self) -> str:
+        results = []
+        for r in self.reports:
+            d = asdict(r)
+            d.pop("raw_traceback")
+            results.append(d)
+        return json.dumps({
+            "chain_summary": self.chain_summary,
+            "errors": results,
+            "total_linked": len(results),
+        }, indent=2)
+
+
+def analyze_chained(
+    traceback_text: str,
+    deep: bool = False,
+    haiku: bool = False,
+    project_path: str = None,
+) -> ChainedDebugReport:
+    """
+    Analyze a chained traceback — parse the chain, analyze each link,
+    and return a unified ChainedDebugReport.
+
+    If the traceback is NOT chained, wraps the single analysis in a
+    ChainedDebugReport for uniform handling.
+    """
+    chain = parse_exception_chain(traceback_text)
+
+    reports = []
+    for link in chain.links:
+        report = analyze(link.traceback_text, deep=deep, haiku=haiku, project_path=project_path)
+        reports.append(report)
+
+    return ChainedDebugReport(
+        chain_summary=chain.format_chain_summary(),
+        reports=reports,
+        root_cause_report=reports[0] if reports else None,
+        final_report=reports[-1] if reports else None,
+        is_chained=chain.is_chained,
+    )
