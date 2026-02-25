@@ -87,7 +87,7 @@ def insert_analysis(
 
 
 def get_repo_stats(repo_id: Optional[str] = None) -> Dict[str, Any]:
-    \"""Get analysis stats for a repo or overall.\"""
+    """Get analysis stats for a repo or overall."""
     init_db()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
