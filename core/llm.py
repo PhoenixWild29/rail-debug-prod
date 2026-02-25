@@ -1,9 +1,10 @@
 """
-Tri-State LLM Engine — Anthropic Claude integration for Rail Debug.
+Quad-Tier LLM Engine — Multi-Model Cascading for Rail Debug.
 
 Tier 1: Regex (handled in analyzer.py — free/instant)
-Tier 2: Claude 4.5 Haiku — cheap/fast for standard unknowns
-Tier 3: Claude 4.6 Sonnet/Opus — deep architectural reasoning (--deep flag)
+Tier 2: xAI Grok Fast (cheap/fast default LLM)
+Tier 3: Anthropic Claude 3.5 Haiku (mid-tier via --haiku)
+Tier 4: Anthropic Claude 3.7 Sonnet (deep reasoning via --deep)
 """
 
 import os
@@ -16,14 +17,23 @@ except ImportError:
     anthropic = None
 
 try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
+
+try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
 
 
-TIER_2_MODEL = "claude-haiku-4-5-20250710"
-TIER_3_MODEL = os.getenv("RAIL_DEBUG_DEEP_MODEL", "claude-sonnet-4-6-20250514")
+# Model routing table
+TIER_2_MODEL = "grok-2-latest"
+TIER_3_MODEL = "claude-3-5-haiku-latest"
+TIER_4_MODEL = "claude-3-7-sonnet-latest"
+
+XAI_BASE_URL = "https://api.x.ai/v1"
 
 SYSTEM_PROMPT = """You are Rail Debug, an expert AI debugging engine. Analyze the Python traceback provided and return ONLY a JSON object with these exact keys:
 
@@ -57,8 +67,18 @@ DEEP_SYSTEM_PROMPT = """You are Rail Debug in DEEP ANALYSIS mode. You are an eli
 Think deeply. Trace causation chains. Identify systemic patterns. No markdown outside the JSON."""
 
 
-def _get_client() -> Optional[object]:
-    """Initialize Anthropic client. Returns None if unavailable."""
+def _get_grok_client() -> Optional[object]:
+    """Initialize xAI Grok client via OpenAI SDK."""
+    if OpenAI is None:
+        return None
+    api_key = os.getenv("XAI_API_KEY")
+    if not api_key:
+        return None
+    return OpenAI(api_key=api_key, base_url=XAI_BASE_URL)
+
+
+def _get_anthropic_client() -> Optional[object]:
+    """Initialize Anthropic client."""
     if anthropic is None:
         return None
     api_key = os.getenv("ANTHROPIC_API_KEY")
@@ -67,23 +87,55 @@ def _get_client() -> Optional[object]:
     return anthropic.Anthropic(api_key=api_key)
 
 
-def analyze_with_llm(traceback_text: str, deep: bool = False) -> Optional[dict]:
-    """
-    Send traceback to Claude for analysis.
-    
-    Args:
-        traceback_text: Raw traceback string
-        deep: If True, use Tier 3 (Sonnet/Opus) with deep analysis prompt
-        
-    Returns:
-        Parsed dict with debug report fields, or None if LLM unavailable
-    """
-    client = _get_client()
+def _parse_response(response_text: str) -> dict:
+    """Parse JSON from LLM response, handling markdown wrapping."""
+    text = response_text.strip()
+    if text.startswith("```"):
+        lines = text.splitlines()
+        text = "\n".join(lines[1:-1])
+    return json.loads(text)
+
+
+def _analyze_grok(traceback_text: str) -> Optional[dict]:
+    """Tier 2: Grok Fast analysis."""
+    client = _get_grok_client()
     if client is None:
         return None
 
-    model = TIER_3_MODEL if deep else TIER_2_MODEL
+    try:
+        response = client.chat.completions.create(
+            model=TIER_2_MODEL,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": f"Analyze this traceback:\n\n```\n{traceback_text}\n```"},
+            ],
+            max_tokens=1024,
+        )
+        result = _parse_response(response.choices[0].message.content)
+        result["_tier"] = 2
+        result["_model"] = TIER_2_MODEL
+        return result
+    except Exception as e:
+        return {
+            "error_type": "LLMAnalysisError",
+            "error_message": str(e),
+            "root_cause": f"Grok analysis failed ({type(e).__name__})",
+            "suggested_fix": "Check XAI_API_KEY or retry. Falling back to regex.",
+            "severity": "low",
+            "_tier": 2,
+            "_model": TIER_2_MODEL,
+        }
+
+
+def _analyze_anthropic(traceback_text: str, deep: bool = False) -> Optional[dict]:
+    """Tier 3/4: Anthropic Claude analysis."""
+    client = _get_anthropic_client()
+    if client is None:
+        return None
+
+    model = TIER_4_MODEL if deep else TIER_3_MODEL
     system = DEEP_SYSTEM_PROMPT if deep else SYSTEM_PROMPT
+    tier = 4 if deep else 3
 
     try:
         message = client.messages.create(
@@ -91,30 +143,42 @@ def analyze_with_llm(traceback_text: str, deep: bool = False) -> Optional[dict]:
             max_tokens=1024,
             system=system,
             messages=[
-                {"role": "user", "content": f"Analyze this traceback:\n\n```\n{traceback_text}\n```"}
+                {"role": "user", "content": f"Analyze this traceback:\n\n```\n{traceback_text}\n```"},
             ],
         )
-
-        # Extract text content
-        response_text = message.content[0].text.strip()
-
-        # Parse JSON — handle potential markdown wrapping
-        if response_text.startswith("```"):
-            lines = response_text.splitlines()
-            response_text = "\n".join(lines[1:-1])
-
-        result = json.loads(response_text)
-        result["_tier"] = 3 if deep else 2
+        result = _parse_response(message.content[0].text)
+        result["_tier"] = tier
         result["_model"] = model
         return result
-
-    except (json.JSONDecodeError, anthropic.APIError, IndexError, KeyError) as e:
+    except Exception as e:
         return {
             "error_type": "LLMAnalysisError",
             "error_message": str(e),
-            "root_cause": f"LLM analysis failed ({type(e).__name__})",
-            "suggested_fix": "Check API key, network, or retry. Falling back to regex.",
+            "root_cause": f"Claude analysis failed ({type(e).__name__})",
+            "suggested_fix": "Check ANTHROPIC_API_KEY or retry.",
             "severity": "low",
-            "_tier": 3 if deep else 2,
+            "_tier": tier,
             "_model": model,
         }
+
+
+def analyze_with_llm(traceback_text: str, deep: bool = False, haiku: bool = False) -> Optional[dict]:
+    """
+    Quad-Tier LLM routing.
+
+    Args:
+        traceback_text: Raw traceback string
+        deep: If True, use Tier 4 (Claude Sonnet — deep reasoning)
+        haiku: If True, use Tier 3 (Claude Haiku — mid-tier)
+
+    Returns:
+        Parsed dict with debug report fields, or None if no LLM available
+    """
+    if deep:
+        return _analyze_anthropic(traceback_text, deep=True)
+
+    if haiku:
+        return _analyze_anthropic(traceback_text, deep=False)
+
+    # Default: Tier 2 Grok Fast
+    return _analyze_grok(traceback_text)
