@@ -3,8 +3,8 @@ Quad-Tier LLM Engine — Multi-Model Cascading for Rail Debug.
 
 Tier 1: Regex (handled in analyzer.py — free/instant)
 Tier 2: xAI Grok Fast (cheap/fast default LLM)
-Tier 3: Anthropic Claude 3.5 Haiku (mid-tier via --haiku)
-Tier 4: Anthropic Claude 3.7 Sonnet (deep reasoning via --deep)
+Tier 3: Anthropic Claude Haiku 4.5 (mid-tier via --haiku)
+Tier 4: Anthropic Claude Sonnet 4.6 (deep reasoning via --deep)
 """
 
 import os
@@ -32,8 +32,8 @@ except ImportError:
 
 # Model routing table
 TIER_2_MODEL = "grok-4-1-fast"
-TIER_3_MODEL = "claude-3-5-haiku-latest"
-TIER_4_MODEL = "claude-3-7-sonnet-latest"
+TIER_3_MODEL = "claude-haiku-4-5-20251001"
+TIER_4_MODEL = "claude-sonnet-4-6"
 
 XAI_BASE_URL = "https://api.x.ai/v1"
 

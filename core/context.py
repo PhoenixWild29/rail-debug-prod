@@ -1,9 +1,9 @@
 """
-Codebase Context Injection — Surgical Source Reader.
+Codebase Context Injection — Universal Surgical Source Reader.
 
-Parses file paths and line numbers from Python tracebacks,
-then extracts a targeted ±5 line window using linecache.
-Zero full-file reads. Injects only what the LLM needs.
+Parses file paths and line numbers from Python, Node.js/JavaScript,
+and Rust tracebacks, then extracts a targeted ±5 line window using
+linecache. Zero full-file reads. Injects only what the LLM needs.
 """
 
 import linecache
@@ -37,22 +37,105 @@ class SourceContext:
         return f"{header}\n" + "\n".join(lines)
 
 
-# Pattern to extract file/line from traceback frames
-FRAME_PATTERN = re.compile(r'File "(.+?)", line (\d+)')
+# ── Multi-Language Frame Parsers ──────────────────────────────────
+
+# Python: File "path.py", line 42
+PYTHON_FRAME = re.compile(r'File "(.+?)", line (\d+)')
+
+# Node.js/JavaScript: at functionName (path.js:42:10) or at path.js:42:10
+NODE_FRAME = re.compile(r'at\s+(?:.+?\s+\()?(.+?):(\d+):\d+\)?')
+
+# Rust: thread 'main' panicked ... src/main.rs:42:5
+# Also matches backtrace frames like: 0: app::module::function at ./src/main.rs:42:5
+RUST_FRAME = re.compile(r'(?:at\s+)?(\S+\.rs):(\d+)(?::\d+)?')
 
 # Default context window: ±5 lines around the error
 CONTEXT_RADIUS = 5
 
+# Supported languages and their detection heuristics
+LANGUAGE_SIGNATURES = {
+    "python": [r'Traceback \(most recent call last\)', r'File ".+?", line \d+'],
+    "node": [r'at\s+.+?\(.+?:\d+:\d+\)', r'at\s+\S+:\d+:\d+', r'Error:.*\n\s+at\s'],
+    "rust": [r"thread '.*' panicked", r'\.rs:\d+:\d+', r'stack backtrace:'],
+}
+
+
+def detect_language(traceback_text: str) -> str:
+    """
+    Auto-detect the language/runtime from traceback format.
+    Returns: 'python' | 'node' | 'rust' | 'unknown'
+    """
+    scores = {}
+    for lang, patterns in LANGUAGE_SIGNATURES.items():
+        score = sum(1 for p in patterns if re.search(p, traceback_text))
+        if score > 0:
+            scores[lang] = score
+
+    if not scores:
+        return "unknown"
+
+    return max(scores, key=scores.get)
+
+
+def extract_frames_python(traceback_text: str) -> List[tuple]:
+    """Extract (file_path, line_number) from Python tracebacks."""
+    return [
+        (m.group(1), int(m.group(2)))
+        for m in PYTHON_FRAME.finditer(traceback_text)
+    ]
+
+
+def extract_frames_node(traceback_text: str) -> List[tuple]:
+    """
+    Extract (file_path, line_number) from Node.js/JavaScript stack traces.
+    Filters out node internals (node:, <anonymous>) to focus on user code.
+    """
+    frames = []
+    for m in NODE_FRAME.finditer(traceback_text):
+        path = m.group(1)
+        # Skip node internals and anonymous frames
+        if path.startswith("node:") or path.startswith("<"):
+            continue
+        frames.append((path, int(m.group(2))))
+    return frames
+
+
+def extract_frames_rust(traceback_text: str) -> List[tuple]:
+    """
+    Extract (file_path, line_number) from Rust panic/backtrace output.
+    Filters out stdlib frames to focus on user crate code.
+    """
+    frames = []
+    for m in RUST_FRAME.finditer(traceback_text):
+        path = m.group(1)
+        # Skip rustc stdlib internals
+        if "/rustc/" in path or "library/std" in path:
+            continue
+        frames.append((path, int(m.group(2))))
+    return frames
+
 
 def extract_frames(traceback_text: str) -> List[tuple]:
     """
-    Extract (file_path, line_number) pairs from a traceback.
-    Returns all frames in order (outermost to innermost).
+    Universal frame extractor — auto-detects language and routes
+    to the correct parser. Returns (file_path, line_number) pairs.
     """
-    return [
-        (m.group(1), int(m.group(2)))
-        for m in FRAME_PATTERN.finditer(traceback_text)
-    ]
+    lang = detect_language(traceback_text)
+
+    if lang == "python":
+        return extract_frames_python(traceback_text)
+    elif lang == "node":
+        return extract_frames_node(traceback_text)
+    elif lang == "rust":
+        return extract_frames_rust(traceback_text)
+
+    # Unknown — try all parsers, return first non-empty result
+    for parser in (extract_frames_python, extract_frames_node, extract_frames_rust):
+        frames = parser(traceback_text)
+        if frames:
+            return frames
+
+    return []
 
 
 def read_source_window(
