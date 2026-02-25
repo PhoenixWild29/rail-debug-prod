@@ -18,6 +18,7 @@ Usage:
     python cli.py --file error.log --chain      # Chained exception analysis
     python cli.py --batch errors.log            # Multi-error batch analysis
     python cli.py --batch errors.log --deep     # Batch + deep analysis
+    python cli.py --file error.log --no-git     # Skip git blame/diff context
 """
 
 import argparse
@@ -105,6 +106,15 @@ def format_report_pretty(report) -> str:
     if report.architecture_notes:
         output += f"\n🏗️  Architecture:  {report.architecture_notes}\n"
 
+    if report.git_blame:
+        output += f"\n👤 Git Blame:    {report.git_blame}\n"
+
+    if report.git_context_raw:
+        for gc in report.git_context_raw:
+            cli_fmt = gc.format_for_cli()
+            if cli_fmt:
+                output += f"\n{cli_fmt}\n"
+
     return output
 
 
@@ -149,7 +159,16 @@ def main():
         "--batch", "-b", type=str, metavar="LOGFILE",
         help="Batch mode: extract and analyze all errors in a log file"
     )
+    parser.add_argument(
+        "--no-git", action="store_true",
+        help="Disable git blame/diff context injection"
+    )
     args = parser.parse_args()
+
+    # Set git disable flag if requested
+    if args.no_git:
+        import os
+        os.environ["RAIL_NO_GIT"] = "1"
 
     # SCAN MODE — display project profile and exit
     if args.scan:
