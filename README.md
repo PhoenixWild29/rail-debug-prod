@@ -24,9 +24,42 @@ Training Pipeline
 - Convert to GGUF: `python convert_to_gguf.py`
 - Knowledge Distillation: `python knowledge_distillation.py`
 
-Docker
-- Build: `docker build -t rail-debug:local app`
-- Run: `docker run -p 8000:8000 -e OPENAI_API_KEY=... -e WEAVIATE_URL=... -e WEAVIATE_API_KEY=... rail-debug:local`
+## Docker &amp; Deployment (Sprint 015)
+
+### Local Development
+\`\`\`bash
+docker compose up -d  # postgres + server
+curl localhost:8000/health
+python cli.py --demo  # local
+python cli.py --demo --docker  # prints docker run cmd
+\`\`\`
+
+### Heroku
+\`\`\`bash
+heroku create rail-debug-prod
+heroku addons:create heroku-postgresql:hobby-dev
+heroku config:set ANTHROPIC_API_KEY=sk-... XAI_API_KEY=...
+./deploy/heroku.sh
+\`\`\`
+
+### VPS (Ubuntu 22.04+ w/ Docker)
+1. Edit deploy/vps.sh (VPS_HOST VPS_USER)
+2. Provision postgres externally, set DATABASE_URL
+3. ./deploy/vps.sh
+4. ssh: sudo systemctl status rail-debug
+
+### GitHub Actions CI
+Merge PR to \`master\` → build/push multi-arch image to \`ghcr.io/PhoenixWild29/rail-debug-prod:latest\`
+
+### Smoke Tests
+\`\`\`bash
+pytest tests/test_sprint015.py
+\`\`\`
+
+Legacy Docker (pre-sprint015):
+- Build: \`docker build -t rail-debug .\`
+- Run: \`docker run -p 8000:8000 rail-debug\`
+
 
 API
 - POST `/debug-rail-code` { query, few_shot_examples?, docs? }

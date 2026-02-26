@@ -1,0 +1,25 @@
+[Unit]
+Description=Rail Debug Prod Service
+Documentation=https://github.com/PhoenixWild29/rail-debug-prod
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=notify
+Restart=always
+RestartSec=3
+WorkingDirectory=/opt/rail-debug
+# Pre-stop container
+ExecStartPre=-/usr/bin/docker stop rail-debug
+ExecStartPre=-/usr/bin/docker rm rail-debug
+# Run container
+ExecStart=/usr/bin/docker run \\
+  --name rail-debug \\
+  --restart=always \\
+  -p 80:8000 \\
+  --env-file /opt/rail-debug/.env \\
+  ghcr.io/phoenixwild29/rail-debug-prod:latest
+ExecStop=/usr/bin/docker stop rail-debug
+
+[Install]
+WantedBy=multi-user.target

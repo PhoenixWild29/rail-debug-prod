@@ -1,0 +1,14 @@
+**/.git
+**/.venv
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.DS_Store
+**/rail_debug_memory.db
+**/.env
+**/venv/
+**/.pytest_cache/
+**/services/
+**/.idea/
+**/.vscode/

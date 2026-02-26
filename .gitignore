@@ -1,6 +1,13 @@
 venv/
+.venv/
 __pycache__/
 *.pyc
+*.pyo
 .DS_Store
 .env
 rail_debug_memory.db
+*.db
+dist/
+build/
+*.egg-info/
+.pytest_cache/
