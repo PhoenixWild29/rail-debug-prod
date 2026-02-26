@@ -1,61 +1,67 @@
 #!/usr/bin/env bash
+# deploy/vps.sh — Rail Debug VPS deploy
+# Runs from LOCAL machine. Rsyncs code to Droplet then configures server.
+# Usage: VPS_USER=root bash deploy/vps.sh
 set -euo pipefail
 
-VPS_HOST=&quot;${VPS_HOST:-138.197.126.127}&quot;
-VPS_USER=&quot;${VPS_USER:-ubuntu}&quot;
-SERVICE_NAME=&quot;rail-debug&quot;
-OPT_DIR=&quot;/opt/$SERVICE_NAME&quot;
-DOMAIN=&quot;debug.secureai.dev&quot;
-EMAIL=&quot;hello@secureai.dev&quot;
+VPS_HOST="${VPS_HOST:-138.197.126.127}"
+VPS_USER="${VPS_USER:-root}"
+OPT_DIR="/opt/rail-debug"
+DOMAIN="debug.secureai.dev"
+EMAIL="hello@secureai.dev"
 
-echo &quot;=== Rail Debug VPS Deploy (Sprint 016) ===&quot;
-echo &quot;Droplet: $VPS_USER@$VPS_HOST ($DOMAIN)&quot;
+echo "=== Rail Debug VPS Deploy (Sprint 016) ==="
+echo "Droplet: $VPS_USER@$VPS_HOST → $DOMAIN"
 
-# Copy files
-echo &quot;📦 Copying code and config...&quot;
-rsync -avz --delete --exclude='venv' --exclude='.git' --exclude='*.db' . &quot;$VPS_USER@$VPS_HOST:$OPT_DIR/&quot;
+# ── 1. Sync code to server ───────────────────────────────────────
+echo "📦 Syncing code..."
+rsync -avz --delete \
+  --exclude='venv' \
+  --exclude='.git' \
+  --exclude='*.db' \
+  --exclude='__pycache__' \
+  . "$VPS_USER@$VPS_HOST:$OPT_DIR/"
 
-scp &quot;deploy/nginx.conf&quot; &quot;$VPS_USER@$VPS_HOST:$OPT_DIR/deploy/&quot;
-
-ssh &quot;$VPS_USER@$VPS_HOST&quot; &lt;&lt; 'EOF'
+# ── 2. Run server-side setup ─────────────────────────────────────
+echo "🔧 Running server setup..."
+ssh "$VPS_USER@$VPS_HOST" bash << ENDSSH
 set -euo pipefail
 
-OPT_DIR=&quot;$OPT_DIR&quot;
-DOMAIN=&quot;$DOMAIN&quot;
-EMAIL=&quot;$EMAIL&quot;
+# Install nginx + certbot if not present
+if ! command -v nginx &>/dev/null; then
+  apt-get update -q
+  apt-get install -y nginx certbot python3-certbot-nginx
+fi
 
-cd \$OPT_DIR
+# Deploy static marketing site
+mkdir -p /var/www/rail-debug
+cp -r $OPT_DIR/web/* /var/www/rail-debug/
+chown -R www-data:www-data /var/www/rail-debug
 
-# Nginx + Certbot + static site
-sudo apt-get update
-sudo apt-get install -y nginx certbot python3-certbot-nginx
+# Install nginx config
+cp $OPT_DIR/deploy/nginx.conf /etc/nginx/sites-available/rail-debug
+ln -sf /etc/nginx/sites-available/rail-debug /etc/nginx/sites-enabled/rail-debug
+rm -f /etc/nginx/sites-enabled/default
+nginx -t && systemctl reload nginx
 
-sudo mkdir -p /var/www/rail-debug
-sudo cp -r web/* /var/www/rail-debug/
-sudo chown -R www-data:www-data /var/www/rail-debug
+# SSL — skip if cert already exists
+if [ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
+  certbot --nginx -d $DOMAIN \
+    --non-interactive --agree-tos --email $EMAIL \
+    --redirect
+else
+  echo "SSL cert already present — skipping certbot"
+fi
 
-sudo cp deploy/nginx.conf /etc/nginx/sites-available/rail-debug
-sudo ln -sf /etc/nginx/sites-available/rail-debug /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t &amp;&amp; sudo systemctl reload nginx || sudo nginx -t
-
-sudo certbot --nginx -d \$DOMAIN \\
-  --non-interactive --agree-tos --email \$EMAIL \\
-  --redirect
-
-# Docker Compose for API + DB
+# Start FastAPI + Postgres via docker compose
+cd $OPT_DIR
 docker compose pull
-docker compose down
+docker compose down --remove-orphans
 docker compose up -d
 
-# Service (legacy)
-sudo systemctl daemon-reload
-sudo systemctl restart rail-debug.service || true
-sudo systemctl enable rail-debug.service || true
+echo "✅ Marketing site: https://$DOMAIN"
+echo "✅ API health: https://$DOMAIN/api/health"
+ENDSSH
 
-echo &quot;✅ Marketing site: https://\$DOMAIN&quot;
-echo &quot;✅ API: https://\$DOMAIN/api/health&quot;
-EOF
-
-echo &quot;🚀 Deploy complete!&quot;
-echo &quot;Check: ssh $VPS_USER@$VPS_HOST 'docker compose ps &amp;&amp; sudo systemctl status nginx'&quot;
+echo "🚀 Deploy complete!"
+echo "Verify: curl -s https://$DOMAIN/api/health"
