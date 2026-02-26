@@ -23,6 +23,12 @@ services:
       - db
     environment:
       DATABASE_URL: postgresql://rail:debug123@db:5432/users
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-prod}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PRICE_DEV: ${STRIPE_PRICE_DEV:-}
+      STRIPE_PRICE_TEAM: ${STRIPE_PRICE_TEAM:-}
+      SITE_DOMAIN: ${SITE_DOMAIN:-https://debug.secureai.dev}
 
 volumes:
   postgres_data:

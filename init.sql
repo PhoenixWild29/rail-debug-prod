@@ -7,15 +7,21 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     api_key TEXT UNIQUE,
-    tier TEXT DEFAULT 'free' CHECK(tier IN ('free','basic','pro')),
+    tier TEXT DEFAULT 'free' CHECK(tier IN ('free','dev','team')),
     daily_usage INTEGER DEFAULT 0,
     monthly_usage INTEGER DEFAULT 0,
     last_daily TEXT,
     last_monthly TEXT,
+    stripe_customer_id TEXT UNIQUE,
+    stripe_subscription_id TEXT UNIQUE,
+    subscription_status TEXT DEFAULT 'inactive' CHECK(subscription_status IN ('active','inactive','past_due','canceled')),
+    billing_period_end TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_users_api_key ON users(api_key);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_stripe_customer ON users(stripe_customer_id);
+CREATE INDEX IF NOT EXISTS idx_users_stripe_sub ON users(stripe_subscription_id);
 
 -- Analyses memory table (learning loop)
 CREATE TABLE IF NOT EXISTS analyses (
