@@ -1,0 +1,53 @@
+/* Custom styles and overrides for Rail Debug marketing site */
+
+:root {
+  --bg-primary:    #0d1117;
+  --bg-secondary:  #161b22;
+  --bg-tertiary:   #21262d;
+  --accent-green:  #00ff88;
+  --accent-blue:   #58a6ff;
+  --text-primary:  #e6edf3;
+  --text-muted:    #8b949e;
+  --border:        #30363d;
+  --font-mono:     'JetBrains Mono', 'Fira Code', monospace;
+  --font-sans:     'Inter', system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+code, .font-mono {
+  font-family: var(--font-mono);
+}
+
+.btn-green {
+  background: linear-gradient(135deg, var(--accent-green), #00cc6a);
+  color: #000;
+  font-weight: 600;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-green:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(0, 255, 136, 0.3);
+}
+
+.severity-high { background: #f85149; }
+.severity-medium { background: #facc15; }
+.severity-low { background: #00ff88; }
+
+@keyframes dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60% { content: '...'; }
+  80%, 100% { content: '...'; }
+}
+
+.analyzing::after {
+  content: '';
+  animation: dots 1.5s steps(4, end) infinite;
+}

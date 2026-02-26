@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8">
+  <title>Pricing - Rail Debug</title>
+  <meta name="description" content="Transparent pricing for Rail Debug. Free, Dev, and Team plans.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚂</text></svg>">
+  <meta property="og:title" content="Pricing - Rail Debug">
+  <meta property="og:description" content="AI Error Analysis Pricing">
+  <meta property="og:image" content="/assets/img/og-image.svg">
+  <meta property="og:url" content="https://debug.secureai.dev/pricing">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            bg: {
+              primary: '#0d1117',
+              secondary: '#161b22',
+              tertiary: '#21262d',
+            },
+            accent: {
+              green: '#00ff88',
+              blue: '#58a6ff',
+            },
+            text: {
+              primary: '#e6edf3',
+              muted: '#8b949e',
+            },
+            border: '#30363d',
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/assets/css/custom.css">
+</head>
+<body class="min-h-screen bg-bg-primary text-text-primary antialiased font-sans">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-bg-secondary/95 backdrop-blur-md border-b border-border/50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <a href="/" class="flex items-center space-x-2 font-mono text-2xl font-bold text-accent-green">
+          <span>Rail Debug</span>
+          <span class="text-xs">>_</span>
+        </a>
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="/" class="text-text-muted hover:text-text-primary transition-colors">Home</a>
+          <a href="#pricing" class="text-accent-green font-semibold">Pricing</a>
+          <a href="https://github.com/PhoenixWild29/rail-debug-prod" class="text-accent-blue hover:text-text-primary transition-colors">GitHub</a>
+          <a href="/#waitlist" class="btn-green px-6 py-2 rounded-lg text-sm font-semibold">Start Free →</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="pt-24 pb-32 bg-gradient-to-b from-bg-primary to-bg-secondary">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h1 class="text-5xl md:text-7xl font-bold font-mono mb-6 bg-gradient-to-r from-accent-green to-accent-blue bg-clip-text text-transparent">
+        Pricing
+      </h1>
+      <p class="text-2xl md:text-3xl text-text-muted mb-12 leading-relaxed">
+        One price per developer. No hidden fees. Start free, upgrade anytime.
+      </p>
+    </div>
+  </section>
+
+  <!-- Pricing Table -->
+  <section id="pricing" class="py-24 bg-bg-primary">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr>
+              <th class="border-b border-border p-4 text-left font-mono font-bold text-lg"></th>
+              <th class="border-b border-border p-4 text-center font-mono font-bold text-lg bg-bg-secondary">Free</th>
+              <th class="border-b border-border p-4 text-center font-mono font-bold text-lg bg-accent-green text-black rounded-t-xl">Dev<br><span class="text-sm font-normal">$19/mo</span></th>
+              <th class="border-b border-border p-4 text-center font-mono font-bold text-lg bg-bg-secondary">Team<br><span class="text-sm font-normal">$99/mo</span></th>
+            </tr>
+          </thead>
+          <tbody class="font-mono">
+            <tr>
+              <td class="border-b border-border p-4 font-semibold">Monthly Analyses</td>
+              <td class="border-b border-border p-4 text-center text-text-muted">100</td>
+              <td class="border-b border-border p-4 text-center text-black font-semibold">10,000</td>
+              <td class="border-b border-border p-4 text-center">100,000</td>
+            </tr>
+            <tr>
+              <td class="border-b border-border p-4 font-semibold">AI Tiers</td>
+              <td class="border-b border-border p-4 text-center text-text-muted">Tier 1</td>
+              <td class="border-b border-border p-4 text-center text-black font-semibold">All 4</td>
+              <td class="border-b border-border p-4 text-center">All 4</td>
+            </tr>
+            <tr>
+              <td class="border-b border-border p-4 font-semibold">API Access</td>
+              <td class="border-b border-border p-4 text-center"><span class="line-through text-text-muted">—</span></td>
+              <td class="border-b border-border p-4 text-center text-black font-semibold">✓</td>
+              <td class="border-b border-border p-4 text-center">✓</td>
+            </tr>
+            <tr>
+              <td class="border-b border-border p-4 font-semibold">IDE Extension</td>
+              <td class="border-b border-border p-4 text-center"><span class="line-through text-text-muted">—</span></td>
+              <td class="border-b border-border p-4 text-center text-black font-semibold">✓</td>
+              <td class="border-b border-border p-4 text-center">✓</td>
+            </tr>
+            <tr>
+              <td class="border-b border-border p-4 font-semibold">Multi-Repo</td>
+              <td class="border-b border-border p-4 text-center"><span class="line-through text-text-muted">—</span></td>
+              <td class="border-b border-border p-4 text-center"><span class="line-through text-text-muted">—</span></td>
+              <td class="border-b border-border p-4 text-center font-semibold">✓</td>
+            </tr>
+            <tr>
+              <td class="p-4 font-semibold">Support</td>
+              <td class="p-4 text-center text-text-muted">Community</td>
+              <td class="p-4 text-center text-black font-semibold">Email</td>
+              <td class="p-4 text-center font-semibold">Priority</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-16 grid md:grid-cols-3 gap-8">
+        <div class="text-center">
+          <a href="/#waitlist" class="block bg-border/50 hover:bg-border py-6 px-8 rounded-xl font-mono font-semibold border border-border/50 transition-all inline-block" data-tier="free">Start Free</a>
+        </div>
+        <div class="text-center">
+          <a href="/#waitlist" class="block btn-green py-6 px-8 rounded-xl font-mono font-semibold text-lg text-black inline-block" data-tier="dev">Get Dev ($19/mo)</a>
+        </div>
+        <div class="text-center">
+          <a href="/#waitlist" class="block bg-accent-blue/80 hover:bg-accent-blue py-6 px-8 rounded-xl font-mono font-semibold text-white inline-block" data-tier="team">Contact for Team</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Waitlist -->
+  <section id="waitlist" class="py-24 bg-gradient-to-t from-bg-secondary to-bg-primary">
+    <div class="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-4xl md:text-5xl font-bold font-mono mb-6">Questions?</h2>
+        <p class="text-xl text-text-muted">Join waitlist or <a href="mailto:hello@secureai.dev" class="text-accent-blue hover:text-text-primary">email us</a>.</p>
+      </div>
+      <form id="waitlist-form" class="bg-bg-secondary p-8 rounded-2xl border border-border">
+        <div id="waitlist-status" class="hidden"></div>
+        <div class="space-y-4">
+          <div>
+            <input type="email" name="email" required class="w-full bg-bg-tertiary border border-border rounded-xl p-4 font-mono text-sm focus:outline-none focus:border-accent-green focus:ring-2 focus:ring-accent-green/20" placeholder="your.email@example.com">
+          </div>
+          <div>
+            <input type="text" name="first_name" class="w-full bg-bg-tertiary border border-border rounded-xl p-4 font-mono text-sm focus:outline-none focus:border-accent-green focus:ring-2 focus:ring-accent-green/20" placeholder="First name (optional)">
+          </div>
+          <div>
+            <select name="tier_interest" class="w-full bg-bg-tertiary border border-border rounded-xl p-4 font-mono text-sm focus:outline-none focus:border-accent-green focus:ring-2 focus:ring-accent-green/20">
+              <option value="free">Free</option>
+              <option value="dev">Dev ($19/mo)</option>
+              <option value="team">Team ($99/mo)</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="mt-8 w-full btn-green py-5 px-6 rounded-xl text-xl font-semibold font-mono">Reserve my spot →</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-bg-tertiary py-12 border-t border-border">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+        <div class="font-mono text-lg font-bold text-accent-green">© 2026 Rail Debug</div>
+        <div class="flex space-x-6">
+          <a href="https://github.com/PhoenixWild29/rail-debug-prod" class="text-accent-blue hover:text-text-primary transition-colors font-mono">GitHub</a>
+          <a href="mailto:hello@secureai.dev" class="text-text-muted hover:text-text-primary transition-colors">hello@secureai.dev</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/assets/js/waitlist.js"></script>
+</body>
+</html>

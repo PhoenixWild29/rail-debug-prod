@@ -36,3 +36,15 @@ CREATE INDEX IF NOT EXISTS idx_analyses_hash ON analyses(tb_hash);
 CREATE INDEX IF NOT EXISTS idx_analyses_snippet ON analyses(tb_snippet(100));
 CREATE INDEX IF NOT EXISTS idx_analyses_time ON analyses(timestamp);
 CREATE INDEX IF NOT EXISTS idx_analyses_repo ON analyses(repo_id);
+
+-- Waitlist table for marketing funnel
+CREATE TABLE IF NOT EXISTS waitlist (
+    id SERIAL PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    first_name TEXT,
+    tier_interest TEXT DEFAULT 'free',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    source TEXT DEFAULT 'marketing-site'
+);
+CREATE INDEX IF NOT EXISTS idx_waitlist_email ON waitlist(email);
+CREATE INDEX IF NOT EXISTS idx_waitlist_tier ON waitlist(tier_interest);
