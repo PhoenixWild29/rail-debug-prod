@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8">
+  <title>Rail Debug - AI-Powered Error Analysis</title>
+  <meta name="description" content="Stop guessing. Start fixing. AI-powered error analysis for Python tracebacks.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚂</text></svg>">
+  <meta property="og:title" content="Rail Debug">
+  <meta property="og:description" content="AI-Powered Error Analysis">
+  <meta property="og:image" content="/assets/img/og-image.svg">
+  <meta property="og:url" content="https://debug.secureai.dev">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            bg: {
+              primary: '#0d1117',
+              secondary: '#161b22',
+              tertiary: '#21262d',
+            },
+            accent: {
+              green: '#00ff88',
+              blue: '#58a6ff',
+            },
+            text: {
+              primary: '#e6edf3',
+              muted: '#8b949e',
+            },
+            border: '#30363d',
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/assets/css/custom.css">
+</head>
+<body class="min-h-screen bg-bg-primary text-text-primary antialiased font-sans">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-bg-secondary/95 backdrop-blur-md border-b border-border/50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <a href="/" class="flex items-center space-x-2 font-mono text-2xl font-bold text-accent-green">
+          <span>Rail Debug</span>
+          <span class="text-xs">>_</span>
+        </a>
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="#features" class="text-text-muted hover:text-text-primary transition-colors">Features</a>
+          <a href="/pricing.html" class="text-text-muted hover:text-text-primary transition-colors">Pricing</a>
+          <a href="https://github.com/PhoenixWild29/rail-debug-prod" class="text-accent-blue hover:text-text-primary transition-colors">GitHub</a>
+          <a href="#waitlist" class="btn-green px-6 py-2 rounded-lg text-sm font-semibold">Start Free →</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="pt-24 pb-32 bg-gradient-to-b from-bg-primary to-bg-secondary">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h1 class="text-5xl md:text-7xl font-bold font-mono mb-6 bg-gradient-to-r from-accent-green to-accent-blue bg-clip-text text-transparent">
+        Stop guessing.
+      </h1>
+      <p class="text-2xl md:text-3xl text-text-muted mb-12 max-w-3xl mx-auto leading-relaxed">
+        AI-powered error analysis. Paste a traceback, get root cause + fix in seconds.
+        <br><span class="font-mono text-accent-green">Four tiers of intelligence — from instant regex to Claude Sonnet.</span>
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-2xl mx-auto">
+        <a href="#demo" class="btn-green px-8 py-4 text-lg rounded-xl font-semibold w-full sm:w-auto">Try it live</a>
+        <a href="#pricing" class="bg-border/50 hover:bg-border px-8 py-4 text-lg rounded-xl font-semibold border border-border/50 w-full sm:w-auto transition-all">See pricing</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Demo -->
+  <section id="demo" class="py-24 bg-bg-primary">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl md:text-5xl font-bold font-mono mb-6">Live Demo</h2>
+        <p class="text-xl text-text-muted max-w-2xl mx-auto">Paste any Python traceback. Watch the AI cascade kick in.</p>
+      </div>
+      <div class="grid lg:grid-cols-2 gap-8 items-start">
+        <div>
+          <div class="bg-bg-secondary p-8 rounded-2xl border border-border">
+            <div class="mb-4 flex gap-2">
+              <label for="traceback-input" class="font-mono text-lg font-semibold">Traceback:</label>
+              <button id="load-example" class="ml-auto px-4 py-1 bg-accent-blue/20 hover:bg-accent-blue/40 text-accent-blue text-sm rounded font-mono">Example</button>
+            </div>
+            <textarea
+              id="traceback-input"
+              rows="10"
+              class="w-full bg-bg-tertiary border border-border rounded-xl p-4 font-mono text-sm resize-vertical focus:outline-none focus:border-accent-green focus:ring-2 focus:ring-accent-green/20"
+              placeholder="Paste your Python traceback here..."></textarea>
+            <button
+              id="analyze-btn"
+              class="mt-4 w-full btn-green py-4 px-6 rounded-xl text-lg font-semibold font-mono">
+              Analyze →
+            </button>
+          </div>
+        </div>
+        <div>
+          <div id="demo-output" class="min-h-[400px] bg-bg-tertiary border-2 border-dashed border-border/50 rounded-2xl p-8 flex items-center justify-center text-text-muted font-mono">
+            Analysis will appear here...
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="py-24 bg-bg-secondary">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-20">
+        <h2 class="text-4xl md:text-5xl font-bold font-mono mb-6">Why Rail Debug?</h2>
+        <p class="text-xl text-text-muted max-w-2xl mx-auto">Built for developers who hate debugging.</p>
+      </div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group">
+          <div class="w-16 h-16 bg-accent-green/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <span class="text-2xl">🔍</span>
+          </div>
+          <h3 class="text-2xl font-bold font-mono mb-4">Quad-Tier Sentinel</h3>
+          <p class="text-text-muted">Regex → Grok Fast → Claude Haiku → Claude Sonnet. Escalates automatically.</p>
+        </div>
+        <div class="bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group">
+          <div class="w-16 h-16 bg-accent-blue/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <span class="text-2xl">🔗</span>
+          </div>
+          <h3 class="text-2xl font-bold font-mono mb-4">Git Blame Context</h3>
+          <p class="text-text-muted">Know who changed the broken line and when.</p>
+        </div>
+        <div class="bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group">
+          <div class="w-16 h-16 bg-accent-green/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <span class="text-2xl">📦</span>
+          </div>
+          <h3 class="text-2xl font-bold font-mono mb-4">Multi-Repo Mode</h3>
+          <p class="text-text-muted">Scan your entire codebase portfolio at once.</p>
+        </div>
+        <div class="bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group">
+          <div class="w-16 h-16 bg-accent-blue/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <span class="text-2xl">🧩</span>
+          </div>
+          <h3 class="text-2xl font-bold font-mono mb-4">VS Code Extension</h3>
+          <p class="text-text-muted">Analyze errors without leaving your editor.</p>
+        </div>
+        <div class="bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group">
+          <div class="w-16 h-16 bg-accent-green/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <span class="text-2xl">🐳</span>
+          </div>
+          <h3 class="text-2xl font-bold font-mono mb-4">Self-Hostable</h3>
+          <p class="text-text-muted">Docker + docker-compose, runs anywhere.</p>
+        </div>
+        <div class="bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group">
+          <div class="w-16 h-16 bg-accent-blue/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <span class="text-2xl">🧠</span>
+          </div>
+          <h3 class="text-2xl font-bold font-mono mb-4">Learning Loop</h3>
+          <p class="text-text-muted">Pattern memory across analyses, gets smarter over time.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Teaser -->
+  <section id="pricing" class="py-24 bg-bg-primary">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-20">
+        <h2 class="text-4xl md:text-5xl font-bold font-mono mb-6">Simple Pricing</h2>
+        <p class="text-xl text-text-muted max-w-2xl mx-auto">Choose your tier. Pay monthly. Cancel anytime.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <div class="bg-bg-secondary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all relative">
+          <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-accent-green text-black px-4 py-1 rounded-xl text-sm font-mono">Most Popular</div>
+          <h3 class="text-3xl font-bold font-mono mb-6 text-accent-green">Dev</h3>
+          <div class="text-4xl font-bold font-mono mb-8">$19<small class="text-lg text-text-muted">/mo</small></div>
+          <ul class="space-y-3 mb-8 text-text-muted">
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>All 4 tiers</li>
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>10k analyses/mo</li>
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>API + IDE</li>
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>Email support</li>
+          </ul>
+          <a href="#waitlist" class="block w-full btn-green py-4 px-6 rounded-xl text-lg font-semibold font-mono text-center" data-tier="dev">Join Waitlist</a>
+        </div>
+        <div class="bg-bg-secondary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all md:col-span-1 lg:col-span-1">
+          <h3 class="text-3xl font-bold font-mono mb-6">Free</h3>
+          <div class="text-4xl font-bold font-mono mb-8">$0</div>
+          <ul class="space-y-3 mb-8 text-text-muted">
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>Tier 1 only</li>
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>100 analyses/mo</li>
+            <li class="flex items-center line-through text-text-muted"><span class="w-5 h-5 bg-border rounded mr-3 flex-shrink-0"></span>API</li>
+          </ul>
+          <a href="#waitlist" class="block w-full bg-border/50 hover:bg-border py-4 px-6 rounded-xl text-lg font-semibold border border-border/50 font-mono text-center transition-all" data-tier="free">Join Waitlist</a>
+        </div>
+        <div class="bg-bg-secondary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all">
+          <h3 class="text-3xl font-bold font-mono mb-6">Team</h3>
+          <div class="text-4xl font-bold font-mono mb-8">$99<small class="text-lg text-text-muted">/mo</small></div>
+          <ul class="space-y-3 mb-8 text-text-muted">
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>All 4 tiers</li>
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>100k analyses/mo</li>
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>Multi-repo</li>
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>Priority support</li>
+          </ul>
+          <a href="#waitlist" class="block w-full bg-accent-blue/80 hover:bg-accent-blue py-4 px-6 rounded-xl text-lg font-semibold text-white font-mono text-center transition-all" data-tier="team">Contact Us</a>
+        </div>
+      </div>
+      <p class="text-center mt-12 text-text-muted text-sm"><a href="/pricing.html" class="text-accent-blue hover:text-text-primary">Full pricing table →</a></p>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <div class="bg-bg-tertiary py-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-16 text-lg font-mono">
+        <div><span class="text-3xl font-bold text-accent-green">16</span> sprints</div>
+        <div><span class="text-3xl font-bold text-accent-green">6</span> languages</div>
+        <div><span class="text-3xl font-bold text-accent-green">4</span>-tier AI</div>
+        <div><span class="text-3xl font-bold text-accent-blue">open source</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Waitlist -->
+  <section id="waitlist" class="py-24 bg-gradient-to-t from-bg-secondary to-bg-primary">
+    <div class="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-4xl md:text-5xl font-bold font-mono mb-6">Join the Waitlist</h2>
+        <p class="text-xl text-text-muted">Be first to know when we launch. No spam, ever.</p>
+      </div>
+      <form id="waitlist-form" class="bg-bg-secondary p-8 rounded-2xl border border-border">
+        <div id="waitlist-status" class="hidden"></div>
+        <div class="space-y-4">
+          <div>
+            <input
+              type="email"
+              name="email"
+              required
+              class="w-full bg-bg-tertiary border border-border rounded-xl p-4 font-mono text-sm focus:outline-none focus:border-accent-green focus:ring-2 focus:ring-accent-green/20"
+              placeholder="your.email@example.com"
+            >
+          </div>
+          <div>
+            <input
+              type="text"
+              name="first_name"
+              class="w-full bg-bg-tertiary border border-border rounded-xl p-4 font-mono text-sm focus:outline-none focus:border-accent-green focus:ring-2 focus:ring-accent-green/20"
+              placeholder="First name (optional)"
+            >
+          </div>
+          <div>
+            <select name="tier_interest" class="w-full bg-bg-tertiary border border-border rounded-xl p-4 font-mono text-sm focus:outline-none focus:border-accent-green focus:ring-2 focus:ring-accent-green/20">
+              <option value="free">Free</option>
+              <option value="dev">Dev ($19/mo)</option>
+              <option value="team">Team ($99/mo)</option>
+            </select>
+          </div>
+        </div>
+        <button
+          type="submit"
+          class="mt-8 w-full btn-green py-5 px-6 rounded-xl text-xl font-semibold font-mono">
+          Reserve my spot →
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-bg-tertiary py-12 border-t border-border">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+        <div class="font-mono text-lg font-bold text-accent-green">© 2026 Rail Debug</div>
+        <div class="flex space-x-6">
+          <a href="https://github.com/PhoenixWild29/rail-debug-prod" class="text-accent-blue hover:text-text-primary transition-colors font-mono">GitHub</a>
+          <a href="mailto:hello@secureai.dev" class="text-text-muted hover:text-text-primary transition-colors">hello@secureai.dev</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/assets/js/demo.js"></script>
+  <script src="/assets/js/waitlist.js"></script>
+</body>
+</html>
