@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# pre-commit — Python syntax and code-gen artifact validator
+#
+# Catches two classes of Aegis code-generation bugs before they reach CI:
+#
+#   1. SYNTAX ERRORS — escaped docstrings (\"\"\" instead of """) and
+#      literal \n sequences used as statement separators instead of
+#      real newlines. Both are produced when the LLM's output gets
+#      JSON-escaped before being written to disk.
+#
+#   2. COMPILE ERRORS — any other SyntaxError that python3 catches.
+#
+# Install:  cp hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# Or run:   make install-hooks
+
+set -euo pipefail
+
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+ERRORS=0
+
+# Get list of staged .py files (added or modified, not deleted)
+STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$' || true)
+
+if [[ -z "$STAGED" ]]; then
+    exit 0
+fi
+
+echo "🔍 pre-commit: checking $(echo "$STAGED" | wc -l | tr -d ' ') staged Python file(s)..."
+
+for FILE in $STAGED; do
+    if [[ ! -f "$FILE" ]]; then
+        continue
+    fi
+
+    # ── 1. Python compile check ──────────────────────────────────────
+    if ! python3 -m py_compile "$FILE" 2>/tmp/pycompile_err; then
+        echo -e "${RED}✗ SYNTAX ERROR:${NC} $FILE"
+        cat /tmp/pycompile_err
+        ERRORS=$((ERRORS + 1))
+        continue
+    fi
+
+    # ── 2. Escaped docstring detector ───────────────────────────────
+    # Aegis artifact: \"\"\" (backslash-quote-backslash-quote-backslash-quote)
+    # appears when triple-quote strings are JSON-escaped before file write.
+    # In bytes: 0x5c 0x22 0x5c 0x22 0x5c 0x22
+    if python3 - "$FILE" <<'PYEOF'
+import sys, re
+
+filepath = sys.argv[1]
+with open(filepath, 'rb') as f:
+    raw = f.read()
+
+# Escaped triple-quote: backslash + quote, three times
+escaped_dq = b'\\"\\"\\"'
+if escaped_dq in raw:
+    count = raw.count(escaped_dq)
+    print(f"ESCAPED_DOCSTRING:{count}")
+    sys.exit(1)
+sys.exit(0)
+PYEOF
+    then
+        :
+    else
+        COUNT=$(python3 - "$FILE" 2>/dev/null <<'PYEOF' || echo 0
+import sys
+with open(sys.argv[1], 'rb') as f:
+    raw = f.read()
+print(raw.count(b'\\"\\"\\"'))
+PYEOF
+)
+        echo -e "${RED}✗ ESCAPED DOCSTRINGS (${COUNT}x):${NC} $FILE"
+        echo -e "  ${YELLOW}Fix:${NC} Replace every \\\\\"\\\\\"\\\\\" with \"\"\" in the file."
+        echo -e "  ${YELLOW}Tip:${NC} This is a code-gen artifact — triple-quotes were JSON-escaped."
+        ERRORS=$((ERRORS + 1))
+        continue
+    fi
+
+    # ── 3. Literal \n as statement separator detector ────────────────
+    # Aegis artifact: multiple statements crammed on one line separated
+    # by literal \n (0x5c 0x6e) rather than real newlines (0x0a).
+    # Pattern: text)\n    text (closing paren, literal \n, then indent+text)
+    if python3 - "$FILE" <<'PYEOF'
+import sys, re
+
+filepath = sys.argv[1]
+with open(filepath, 'rb') as f:
+    raw = f.read()
+
+# Look for literal \n (0x5c 0x6e) that appear to be statement separators
+# Heuristic: closing paren/bracket followed by \n followed by whitespace+identifier
+pattern = rb'\)\s*\\n\s{2,}[a-zA-Z_]'
+matches = re.findall(pattern, raw)
+if matches:
+    print(f"LITERAL_NEWLINE:{len(matches)}")
+    sys.exit(1)
+sys.exit(0)
+PYEOF
+    then
+        :
+    else
+        echo -e "${RED}✗ LITERAL \\\\n AS STATEMENT SEPARATOR:${NC} $FILE"
+        echo -e "  ${YELLOW}Fix:${NC} Replace literal \\\\n between statements with real newlines."
+        echo -e "  ${YELLOW}Tip:${NC} This is a code-gen artifact — \\\\n was not expanded to a real newline."
+        ERRORS=$((ERRORS + 1))
+        continue
+    fi
+
+    echo -e "  ${GREEN}✓${NC} $FILE"
+done
+
+echo ""
+if [[ $ERRORS -gt 0 ]]; then
+    echo -e "${RED}pre-commit: $ERRORS file(s) failed — commit blocked.${NC}"
+    echo -e "${YELLOW}Fix the errors above, then re-stage and retry.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}pre-commit: all checks passed.${NC}"
+exit 0
