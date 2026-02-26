@@ -70,7 +70,7 @@ def init_db():
 
 def query_similar(tb_snippet: str, repo_id: Optional[str] = None, limit: int = 3) -> List[Dict[str, Any]]:
     """Query similar past analyses."""
-
+    init_db()
     search_term = f'%{tb_snippet[:100]}%'
     if IS_POSTGRES:
         conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
@@ -123,7 +123,7 @@ def insert_analysis(
     repo_id: Optional[str] = None
 ) -> bool:
     """Insert analysis result. Returns True if inserted (new)."""
-
+    init_db()
     success_int = 1 if success else 0
     if IS_POSTGRES:
         try:
