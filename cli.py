@@ -205,7 +205,9 @@ def main():
         "--port", type=int, default=8000,
         help="Port for --serve mode (default: 8000)"
     )
-    parser.add_argument('--memory', default=True, help='Enable learning loop SQLite memory/pattern recall (default: True)')\n    parser.add_argument('--no-memory', dest='memory', action='store_false')\n    args = parser.parse_args()
+    parser.add_argument('--memory', default=True, help='Enable learning loop SQLite memory/pattern recall (default: True)')
+    parser.add_argument('--no-memory', dest='memory', action='store_false')
+    args = parser.parse_args()
 
     # Multi-Repo Orchestrator
     if args.portfolio or args.multi_repo or args.repo_dir:

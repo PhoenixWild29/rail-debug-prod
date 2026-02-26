@@ -14,7 +14,7 @@ IS_POSTGRES = HAS_POSTGRES and DATABASE_URL and DATABASE_URL.startswith('postgre
 DB_PATH = os.getenv('SQLITE_PATH', 'rail_debug_memory.db')
 
 def init_db():
-    \"\"\"Initialize the memory database. Idempotent.\"\"\"
+    """Initialize the memory database. Idempotent."""
 
     if IS_POSTGRES:
         conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
@@ -69,7 +69,7 @@ def init_db():
         conn.close()
 
 def query_similar(tb_snippet: str, repo_id: Optional[str] = None, limit: int = 3) -> List[Dict[str, Any]]:
-    \"\"\"Query similar past analyses.\"\"\"
+    """Query similar past analyses."""
 
     search_term = f'%{tb_snippet[:100]}%'
     if IS_POSTGRES:
@@ -122,7 +122,7 @@ def insert_analysis(
     success: bool,
     repo_id: Optional[str] = None
 ) -> bool:
-    \"\"\"Insert analysis result. Returns True if inserted (new).\"\"\"
+    """Insert analysis result. Returns True if inserted (new)."""
 
     success_int = 1 if success else 0
     if IS_POSTGRES:
@@ -155,7 +155,7 @@ def insert_analysis(
     return inserted
 
 def get_repo_stats(repo_id: Optional[str] = None) -> Dict[str, Any]:
-    \"\"\"Get analysis stats.\"\"\"
+    """Get analysis stats."""
 
     if IS_POSTGRES:
         conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
