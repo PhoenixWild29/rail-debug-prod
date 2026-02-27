@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Rail Debug</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/custom.css">
+  <style>
+    .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+    .label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+    .value { color: var(--text-primary); font-size: 1rem; font-weight: 500; }
+    .mono { font-family: var(--font-mono); font-size: 0.875rem; }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; }
+    .btn-primary { background: var(--accent-green); color: #000; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--accent-blue); }
+    .btn-danger { background: transparent; color: #f85149; border: 1px solid #f85149; }
+    .btn-danger:hover { background: rgba(248,81,73,0.1); }
+    .usage-track { background: var(--bg-tertiary); border-radius: 4px; height: 6px; overflow: hidden; margin-top: 0.5rem; }
+    .usage-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+    .tier-badge { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: var(--bg-tertiary); border: 1px solid var(--border); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; display: none; align-items: center; justify-content: center; }
+    .plan-card { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; width: 220px; }
+    .plan-card.featured { border-color: var(--accent-green); }
+    nav { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { font-family: var(--font-mono); font-weight: 600; color: var(--accent-green); }
+  </style>
+</head>
+<body style="background: var(--bg-primary); color: var(--text-primary); min-height: 100vh;">
+
+  <!-- Nav -->
+  <nav>
+    <a href="/" class="nav-brand">rail-debug ~</a>
+    <div style="display:flex;gap:1rem;align-items:center;">
+      <a href="/pricing.html" style="color:var(--text-muted);font-size:0.875rem;">Pricing</a>
+      <button id="logout-btn" class="btn btn-secondary" style="padding:0.375rem 0.875rem;">Logout</button>
+    </div>
+  </nav>
+
+  <!-- Flash message -->
+  <div id="flash" style="display:none;text-align:center;padding:0.75rem;background:var(--bg-secondary);border-bottom:1px solid var(--border);font-size:0.875rem;"></div>
+
+  <!-- Main content -->
+  <div style="max-width:960px;margin:0 auto;padding:2rem 1.5rem;">
+
+    <!-- Loading state -->
+    <div id="loading" style="color:var(--text-muted);text-align:center;padding:4rem;">Loading dashboard...</div>
+
+    <!-- Dashboard content (hidden until loaded) -->
+    <div id="dash-content" style="display:none;">
+
+      <h1 style="font-size:1.5rem;font-weight:700;margin-bottom:2rem;">Dashboard</h1>
+
+      <!-- Top row: Account + Usage -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+
+        <!-- Account card -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;">
+            <span style="font-size:1rem;font-weight:600;">Account</span>
+            <span id="user-tier" class="tier-badge">free</span>
+          </div>
+          <div style="margin-bottom:0.75rem;">
+            <div class="label">Email</div>
+            <div class="value" id="user-email">—</div>
+          </div>
+          <div>
+            <div class="label">Member since</div>
+            <div class="value" id="user-joined">—</div>
+          </div>
+        </div>
+
+        <!-- Usage card -->
+        <div class="card">
+          <div style="font-size:1rem;font-weight:600;margin-bottom:1.25rem;">Usage — This Month</div>
+          <div class="label">Analyses</div>
+          <div class="value mono" id="usage-count">0 / 50</div>
+          <div class="usage-track">
+            <div class="usage-fill" id="usage-bar" style="width:0%;background:#00ff88;"></div>
+          </div>
+          <div style="color:var(--text-muted);font-size:0.75rem;margin-top:0.75rem;">
+            Resets on the 1st of each month
+          </div>
+        </div>
+      </div>
+
+      <!-- API Key card -->
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div style="font-size:1rem;font-weight:600;margin-bottom:1.25rem;">API Key</div>
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+          <code class="mono" id="api-key-display" style="background:var(--bg-tertiary);padding:0.5rem 0.75rem;border-radius:6px;border:1px solid var(--border);flex:1;min-width:200px;">—</code>
+          <button id="copy-key-btn" class="btn btn-secondary">Copy</button>
+          <button id="regen-key-btn" class="btn btn-danger">Regenerate</button>
+        </div>
+        <div style="color:var(--text-muted);font-size:0.75rem;margin-top:0.75rem;">
+          Pass as <code class="mono" style="color:var(--accent-blue);">X-API-Key: &lt;key&gt;</code> header in API requests.
+        </div>
+      </div>
+
+      <!-- Billing card -->
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div style="font-size:1rem;font-weight:600;margin-bottom:1.25rem;">Billing</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div class="label">Status</div>
+            <div class="value" id="billing-status">—</div>
+            <div style="color:var(--text-muted);font-size:0.8rem;margin-top:0.25rem;" id="billing-period">—</div>
+          </div>
+          <div style="display:flex;gap:0.75rem;">
+            <button id="upgrade-btn" class="btn btn-primary">Upgrade Plan</button>
+            <button id="portal-btn" class="btn btn-secondary" style="display:none;">Manage Billing</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini analyzer -->
+      <div class="card">
+        <div style="font-size:1rem;font-weight:600;margin-bottom:1rem;">Quick Debug</div>
+        <textarea
+          id="mini-tb"
+          placeholder="Paste a traceback here..."
+          style="width:100%;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text-primary);font-family:var(--font-mono);font-size:0.8rem;resize:vertical;min-height:100px;box-sizing:border-box;"
+        ></textarea>
+        <div style="margin-top:0.75rem;display:flex;gap:0.75rem;align-items:flex-start;">
+          <button id="mini-analyze-btn" class="btn btn-primary">Analyze</button>
+          <pre id="mini-result" style="flex:1;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:0.75rem;font-size:0.8rem;white-space:pre-wrap;word-break:break-word;margin:0;min-height:60px;color:var(--text-muted);"></pre>
+        </div>
+      </div>
+
+    </div><!-- /dash-content -->
+  </div><!-- /main -->
+
+  <!-- Upgrade modal -->
+  <div id="upgrade-modal" class="modal-overlay">
+    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:600px;width:90%;position:relative;">
+      <button id="modal-close" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text-muted);font-size:1.25rem;cursor:pointer;">✕</button>
+      <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:0.5rem;">Upgrade Rail Debug</h2>
+      <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1.5rem;">Choose a plan to unlock more analyses and features.</p>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+
+        <!-- Dev plan -->
+        <div class="plan-card">
+          <div style="font-size:1.125rem;font-weight:700;margin-bottom:0.25rem;">Dev</div>
+          <div style="font-size:1.75rem;font-weight:800;color:var(--accent-blue);margin-bottom:0.75rem;">$19<span style="font-size:0.875rem;font-weight:400;color:var(--text-muted);">/mo</span></div>
+          <ul style="color:var(--text-muted);font-size:0.8rem;margin-bottom:1rem;list-style:none;padding:0;">
+            <li style="margin-bottom:0.3rem;">200 analyses / day</li>
+            <li style="margin-bottom:0.3rem;">2,000 analyses / month</li>
+            <li style="margin-bottom:0.3rem;">All languages</li>
+            <li>Email support</li>
+          </ul>
+          <button class="btn btn-secondary plan-select-btn" data-plan="dev" style="width:100%;justify-content:center;">Select</button>
+        </div>
+
+        <!-- Team plan -->
+        <div class="plan-card featured">
+          <div style="font-size:0.7rem;font-weight:600;color:var(--accent-green);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.25rem;">Most Popular</div>
+          <div style="font-size:1.125rem;font-weight:700;margin-bottom:0.25rem;">Team</div>
+          <div style="font-size:1.75rem;font-weight:800;color:var(--accent-green);margin-bottom:0.75rem;">$99<span style="font-size:0.875rem;font-weight:400;color:var(--text-muted);">/mo</span></div>
+          <ul style="color:var(--text-muted);font-size:0.8rem;margin-bottom:1rem;list-style:none;padding:0;">
+            <li style="margin-bottom:0.3rem;">Unlimited analyses</li>
+            <li style="margin-bottom:0.3rem;">Priority queue</li>
+            <li style="margin-bottom:0.3rem;">Team API keys</li>
+            <li>Priority support</li>
+          </ul>
+          <button class="btn btn-primary plan-select-btn" data-plan="team" style="width:100%;justify-content:center;">Select</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/dashboard.js"></script>
+</body>
+</html>

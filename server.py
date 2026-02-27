@@ -16,6 +16,8 @@ from pydantic import BaseModel, Field
 from core.analyzer import analyze, analyze_to_json, analyze_chained
 from core.batch import analyze_batch, extract_tracebacks
 from core.project import scan_project
+from routes.auth import router as auth_router
+from routes.billing import router as billing_router
 from routes.waitlist import router as waitlist_router
 
 # ── App ──────────────────────────────────────────────────────────
@@ -34,6 +36,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
+app.include_router(billing_router)
 app.include_router(waitlist_router)
 
 # ── Request / Response Models ────────────────────────────────────
