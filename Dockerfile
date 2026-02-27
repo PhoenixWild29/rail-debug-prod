@@ -16,15 +16,19 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Copy installed deps
-COPY --from=builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
+# Create non-root user first so we can own the deps directory
+RUN useradd --create-home appuser
+
+# Copy installed deps into appuser's home (avoids /root 700 traversal issue)
+COPY --from=builder /root/.local /home/appuser/.local
+ENV PATH=/home/appuser/.local/bin:$PATH
 
 # Copy app
 COPY . .
 
-# Create non-root user
-RUN useradd --create-home appuser && chown -R appuser:appuser /app && chmod -R a+rX /root/.local
+# Own everything
+RUN chown -R appuser:appuser /app /home/appuser/.local
+
 USER appuser
 
 EXPOSE 8000
