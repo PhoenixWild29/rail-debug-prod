@@ -13,7 +13,7 @@ def normalize_traceback(tb: str) -> Tuple[str, str]:
     
     for line in lines:
         # Match Python traceback: File "path", line N,
-        match = re.search(r'File "([^"]+)", line (\\d+),', line)
+        match = re.search(r'File "([^"]+)", line (\d+),', line)
         if match:
             filename = os.path.basename(match.group(1))
             lineno = match.group(2)
@@ -22,7 +22,7 @@ def normalize_traceback(tb: str) -> Tuple[str, str]:
                 seen.add(key)
                 normalized_lines.append(key)
         # Fallback: any file:line
-        match_fb = re.search(r'([a-zA-Z0-9_.-]+):(\\d+)', line)
+        match_fb = re.search(r'([a-zA-Z0-9_.-]+):(\d+)', line)
         if match_fb and match_fb.group(1) not in seen:
             key = f'{match_fb.group(1)}:{match_fb.group(2)}'
             if key not in seen:

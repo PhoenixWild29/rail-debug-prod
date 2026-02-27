@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS analyses (
     repo_id TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_analyses_hash ON analyses(tb_hash);
-CREATE INDEX IF NOT EXISTS idx_analyses_snippet ON analyses(tb_snippet(100));
+CREATE INDEX IF NOT EXISTS idx_analyses_snippet ON analyses(tb_snippet);
 CREATE INDEX IF NOT EXISTS idx_analyses_time ON analyses(timestamp);
 CREATE INDEX IF NOT EXISTS idx_analyses_repo ON analyses(repo_id);
 

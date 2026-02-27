@@ -24,7 +24,7 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_analyses_hash ON analyses(tb_hash)
         ''')
         cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_analyses_snippet ON analyses(tb_snippet(100))
+            CREATE INDEX IF NOT EXISTS idx_analyses_snippet ON analyses(tb_snippet)
         ''')
         cursor.execute('''
             CREATE INDEX IF NOT EXISTS idx_analyses_time ON analyses(timestamp)

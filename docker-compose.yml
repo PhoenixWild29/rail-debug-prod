@@ -29,6 +29,8 @@ services:
       STRIPE_PRICE_DEV: ${STRIPE_PRICE_DEV:-}
       STRIPE_PRICE_TEAM: ${STRIPE_PRICE_TEAM:-}
       SITE_DOMAIN: ${SITE_DOMAIN:-https://debug.secureai.dev}
+      XAI_API_KEY: ${XAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
 
 volumes:
   postgres_data:
