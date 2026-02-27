@@ -77,14 +77,14 @@ def query_similar(tb_snippet: str, repo_id: Optional[str] = None, limit: int = 3
         cursor = conn.cursor()
         if repo_id:
             cursor.execute('''
-                SELECT * FROM analyses 
-                WHERE tb_snippet LIKE $1 AND (repo_id = $2 OR repo_id IS NULL OR repo_id = '')
-                ORDER BY CASE WHEN (repo_id = $2 OR repo_id IS NULL OR repo_id = '') THEN 0 ELSE 1 END, timestamp DESC 
-                LIMIT $3
-            ''', (search_term, repo_id, limit))
+                SELECT * FROM analyses
+                WHERE tb_snippet LIKE %s AND (repo_id = %s OR repo_id IS NULL OR repo_id = '')
+                ORDER BY CASE WHEN (repo_id = %s OR repo_id IS NULL OR repo_id = '') THEN 0 ELSE 1 END, timestamp DESC
+                LIMIT %s
+            ''', (search_term, repo_id, repo_id, limit))
         else:
             cursor.execute('''
-                SELECT * FROM analyses WHERE tb_snippet LIKE $1 ORDER BY timestamp DESC LIMIT $2
+                SELECT * FROM analyses WHERE tb_snippet LIKE %s ORDER BY timestamp DESC LIMIT %s
             ''', (search_term, limit))
         rows = cursor.fetchall()
         results = list(rows)
@@ -131,7 +131,7 @@ def insert_analysis(
             cursor = conn.cursor()
             cursor.execute('''
                 INSERT INTO analyses (language, tb_hash, tb_snippet, severity, tier_used, root_cause, suggested_fix, confidence, success, repo_id)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (language, tb_hash, tb_snippet, severity, tier_used, root_cause, suggested_fix, confidence, success, repo_id))
             conn.commit()
             inserted = True
@@ -162,7 +162,7 @@ def get_repo_stats(repo_id: Optional[str] = None) -> Dict[str, Any]:
         cursor = conn.cursor()
         params = []
         if repo_id:
-            where_clause = "WHERE repo_id = $1 OR repo_id IS NULL OR repo_id = ''"
+            where_clause = "WHERE repo_id = %s OR repo_id IS NULL OR repo_id = ''"
             params = [repo_id]
             sql = f'''
                 SELECT 
