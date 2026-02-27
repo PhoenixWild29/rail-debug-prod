@@ -24,7 +24,7 @@ ENV PATH=/root/.local/bin:$PATH
 COPY . .
 
 # Create non-root user
-RUN useradd --create-home appuser && chown -R appuser:appuser /app
+RUN useradd --create-home appuser && chown -R appuser:appuser /app && chmod -R a+rX /root/.local
 USER appuser
 
 EXPOSE 8000
