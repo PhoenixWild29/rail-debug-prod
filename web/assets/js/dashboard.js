@@ -62,6 +62,12 @@ function renderDashboard(user) {
   const params = new URLSearchParams(window.location.search);
   if (params.get('upgrade') === 'success') showFlash('Subscription activated! Welcome to ' + TIER_LABELS[user.tier] + '.', 'green');
   if (params.get('upgrade') === 'canceled') showFlash('Upgrade canceled — you are still on the Free plan.', 'yellow');
+
+  // Plan param auto-open upgrade modal
+  const plan = params.get('plan');
+  if (user.tier === 'free' && (plan === 'dev' || plan === 'team')) {
+    document.getElementById('upgrade-modal').style.display = 'flex';
+  }
 }
 
 // Copy API key
