@@ -2,7 +2,7 @@
 
 const TIER_LABELS = { free: 'Free', dev: 'Dev — $19/mo', team: 'Team — $99/mo' };
 const TIER_COLORS = { free: '#8b949e', dev: '#58a6ff', team: '#00ff88' };
-const MONTHLY_LIMITS = { free: 50, dev: 2000, team: null };
+const MONTHLY_LIMITS = { free: 100, dev: 10000, team: null };
 
 async function loadDashboard() {
   const res = await fetch('/api/auth/me', { headers: getAuthHeaders() });
@@ -24,15 +24,28 @@ function renderDashboard(user) {
   const joinDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : '—';
   document.getElementById('user-joined').textContent = joinDate;
 
-  // Usage
+  // Usage — use server-provided limit if available, fall back to JS constant
   const monthly = user.monthly_usage || 0;
-  const limit = MONTHLY_LIMITS[user.tier];
+  const limit = (user.monthly_limit !== undefined && user.monthly_limit !== null)
+    ? user.monthly_limit
+    : MONTHLY_LIMITS[user.tier];
   const limitText = limit ? `${monthly} / ${limit}` : `${monthly} / unlimited`;
   document.getElementById('usage-count').textContent = limitText;
   if (limit) {
     const pct = Math.min((monthly / limit) * 100, 100);
     document.getElementById('usage-bar').style.width = `${pct}%`;
     document.getElementById('usage-bar').style.background = pct > 80 ? '#f85149' : '#00ff88';
+    if (user.tier === 'free' && pct >= 80) {
+      const nudgeEl = document.getElementById('upgrade-nudge');
+      if (nudgeEl) {
+        document.getElementById('nudge-text').textContent =
+          `You've used ${monthly}/${limit} analyses this month — upgrade to Dev for 10,000.`;
+        nudgeEl.style.display = 'flex';
+        document.getElementById('nudge-upgrade-btn').addEventListener('click', () => {
+          document.getElementById('upgrade-modal').style.display = 'flex';
+        });
+      }
+    }
   } else {
     document.getElementById('usage-bar').style.width = '10%';
   }
