@@ -16,8 +16,8 @@ JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-in-prod")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_HOURS = 24
 
-TIER_DAILY_LIMITS = {"free": 10, "dev": 200, "team": None}
-TIER_MONTHLY_LIMITS = {"free": 50, "dev": 2000, "team": None}
+TIER_DAILY_LIMITS = {"free": 20, "dev": 500, "team": None}
+TIER_MONTHLY_LIMITS = {"free": 100, "dev": 10000, "team": None}
 
 
 def get_db_conn():
