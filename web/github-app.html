@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8">
+  <title>Rail Debug for GitHub — Automatic CI Failure Analysis</title>
+  <meta name="description" content="Install Rail Debug on your GitHub repo. When CI fails, get an AI-powered root cause and fix posted directly as a commit comment.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚂</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            bg: { primary: '#0d1117', secondary: '#161b22', tertiary: '#21262d' },
+            accent: { green: '#00ff88', blue: '#58a6ff' },
+            text: { primary: '#e6edf3', muted: '#8b949e' },
+            border: '#30363d',
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/assets/css/custom.css">
+</head>
+<body class="min-h-screen bg-bg-primary text-text-primary antialiased font-sans">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-bg-secondary/95 backdrop-blur-md border-b border-border/50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <a href="/" class="flex items-center space-x-2 font-mono text-2xl font-bold text-accent-green">
+          <span>Rail Debug</span>
+          <span class="text-xs">>_</span>
+        </a>
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="/" class="text-text-muted hover:text-text-primary transition-colors">Home</a>
+          <a href="/pricing.html" class="text-text-muted hover:text-text-primary transition-colors">Pricing</a>
+          <a href="/dashboard" class="btn-green px-6 py-2 rounded-lg text-sm font-semibold">Get Started →</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="pt-32 pb-24 bg-gradient-to-b from-bg-primary to-bg-secondary">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div class="inline-flex items-center gap-2 bg-bg-secondary border border-border rounded-full px-4 py-2 mb-8 text-sm font-mono text-text-muted">
+        <span class="w-2 h-2 bg-accent-green rounded-full animate-pulse"></span>
+        GitHub App — Live
+      </div>
+      <h1 class="text-5xl md:text-6xl font-bold font-mono mb-6 bg-gradient-to-r from-accent-green to-accent-blue bg-clip-text text-transparent">
+        CI fails.<br>Rail Debug explains.
+      </h1>
+      <p class="text-xl md:text-2xl text-text-muted mb-12 max-w-2xl mx-auto leading-relaxed">
+        Install once. Every GitHub Actions failure gets an AI-powered root cause and fix posted as a commit comment — automatically.
+      </p>
+      <a href="/dashboard" class="inline-block btn-green px-10 py-4 text-lg rounded-xl font-semibold font-mono">
+        Install GitHub App →
+      </a>
+      <p class="mt-4 text-text-muted text-sm">Free plan included. No credit card required.</p>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="py-24 bg-bg-primary">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-4xl font-bold font-mono text-center mb-16">How it works</h2>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-accent-green/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <span class="text-3xl">📦</span>
+          </div>
+          <div class="font-mono text-accent-green text-sm mb-2">Step 1</div>
+          <h3 class="text-xl font-bold font-mono mb-3">Install the App</h3>
+          <p class="text-text-muted">Connect Rail Debug to your GitHub repo in one click. No config files, no YAML changes.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-16 h-16 bg-accent-blue/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <span class="text-3xl">⚡</span>
+          </div>
+          <div class="font-mono text-accent-blue text-sm mb-2">Step 2</div>
+          <h3 class="text-xl font-bold font-mono mb-3">CI fails</h3>
+          <p class="text-text-muted">GitHub Actions workflow fails. Rail Debug is notified instantly via webhook.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-16 h-16 bg-accent-green/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <span class="text-3xl">💬</span>
+          </div>
+          <div class="font-mono text-accent-green text-sm mb-2">Step 3</div>
+          <h3 class="text-xl font-bold font-mono mb-3">Get the fix</h3>
+          <p class="text-text-muted">Root cause + actionable fix posted as a commit comment. No dashboard required.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Example comment -->
+  <section class="py-24 bg-bg-secondary">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-4xl font-bold font-mono text-center mb-4">What it looks like</h2>
+      <p class="text-text-muted text-center mb-12">A real commit comment from Rail Debug.</p>
+      <div class="bg-bg-primary border border-border rounded-2xl overflow-hidden">
+        <!-- GitHub comment header -->
+        <div class="flex items-center gap-3 px-6 py-4 border-b border-border bg-bg-secondary">
+          <div class="w-8 h-8 rounded-full bg-accent-green/20 flex items-center justify-center font-mono text-sm text-accent-green font-bold">RD</div>
+          <div>
+            <span class="font-semibold text-text-primary text-sm">rail-debug</span>
+            <span class="text-text-muted text-sm ml-2">bot commented</span>
+          </div>
+        </div>
+        <!-- Comment body -->
+        <div class="px-6 py-6 font-mono text-sm space-y-4">
+          <div class="text-lg font-bold">🟠 Rail Debug — CI Failure Analysis</div>
+          <div><span class="text-text-muted">Error:</span> <code class="bg-bg-tertiary px-2 py-0.5 rounded text-accent-blue">AttributeError</code> — 'NoneType' object has no attribute 'split'</div>
+          <div><span class="text-text-muted">Root Cause:</span> <span class="text-text-primary">Line 47 calls <code class="text-accent-green">user.email.split('@')</code> before checking if <code class="text-accent-green">user</code> is None. The query returns None when the user ID doesn't exist in the database.</span></div>
+          <div><span class="text-text-muted">Fix:</span> <span class="text-text-primary">Add a null check before accessing user attributes:</span>
+            <pre class="mt-2 bg-bg-tertiary rounded-lg p-4 text-xs overflow-x-auto"><code><span class="text-text-muted">- domain = user.email.split('@')[1]</span>
+<span class="text-accent-green">+ if user is None:</span>
+<span class="text-accent-green">+     raise ValueError(f"User {user_id} not found")</span>
+<span class="text-accent-green">+ domain = user.email.split('@')[1]</span></code></pre>
+          </div>
+          <div class="text-text-muted text-xs pt-2 border-t border-border">Analyzed by Rail Debug (grok-4-1-fast) — <a href="https://debug.secureai.dev" class="text-accent-blue">debug.secureai.dev</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-24 bg-bg-primary">
+    <div class="max-w-2xl mx-auto px-4 text-center">
+      <h2 class="text-4xl font-bold font-mono mb-6">Zero-friction debugging.</h2>
+      <p class="text-xl text-text-muted mb-10">Your team gets AI-powered CI analysis without changing a single workflow.</p>
+      <a href="/dashboard" class="inline-block btn-green px-10 py-4 text-lg rounded-xl font-semibold font-mono mb-4">
+        Install GitHub App →
+      </a>
+      <p class="text-text-muted text-sm">
+        Free plan: 100 analyses/month. <a href="/pricing.html" class="text-accent-blue hover:text-text-primary">See all plans →</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-bg-tertiary py-12 border-t border-border">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+        <div class="font-mono text-lg font-bold text-accent-green">© 2026 Rail Debug</div>
+        <div class="flex space-x-6">
+          <a href="https://github.com/PhoenixWild29/rail-debug-prod" class="text-accent-blue hover:text-text-primary transition-colors font-mono">GitHub</a>
+          <a href="mailto:hello@secureai.dev" class="text-text-muted hover:text-text-primary transition-colors">hello@secureai.dev</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
