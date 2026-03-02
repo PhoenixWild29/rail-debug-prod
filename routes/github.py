@@ -8,7 +8,7 @@ Endpoints:
 
 import os
 import jwt as _jwt
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from core.auth_middleware import JWT_SECRET, JWT_ALGORITHM
 
