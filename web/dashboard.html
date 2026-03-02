@@ -121,6 +121,25 @@
         </div>
       </div>
 
+      <!-- GitHub card -->
+      <div class="card" id="github-card" style="margin-bottom:1.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+          <div style="font-size:1rem;font-weight:600;">GitHub App</div>
+          <span id="github-status-badge" style="font-size:0.75rem;padding:2px 8px;border-radius:4px;background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-muted);">Not connected</span>
+        </div>
+        <div id="github-connected-section" style="display:none;">
+          <div style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1rem;">Connected as <strong id="github-username-display" style="color:var(--text-primary);">—</strong></div>
+          <div id="github-analyses-list" style="display:none;">
+            <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.5rem;">Recent CI Analyses</div>
+            <div id="github-analyses-items"></div>
+          </div>
+        </div>
+        <div id="github-connect-section">
+          <div style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1rem;">Install the Rail Debug GitHub App to automatically analyze CI failures and post results as commit comments.</div>
+          <button id="connect-github-btn" class="btn btn-secondary">Connect GitHub</button>
+        </div>
+      </div>
+
       <!-- Mini analyzer -->
       <div class="card">
         <div style="font-size:1rem;font-weight:600;margin-bottom:1rem;">Quick Debug</div>

@@ -65,6 +65,18 @@ function renderDashboard(user) {
     document.getElementById('billing-period').textContent = user.tier === 'free' ? 'Free plan — no billing' : '—';
   }
 
+  // GitHub section
+  if (user.github_username) {
+    document.getElementById('github-connected-section').style.display = 'block';
+    document.getElementById('github-connect-section').style.display = 'none';
+    document.getElementById('github-username-display').textContent = '@' + user.github_username;
+    const badge = document.getElementById('github-status-badge');
+    badge.textContent = 'Connected';
+    badge.style.color = 'var(--accent-green)';
+    badge.style.borderColor = 'var(--accent-green)';
+    loadGithubAnalyses();
+  }
+
   // Upgrade button — hide if already on paid plan
   if (user.tier !== 'free') {
     document.getElementById('upgrade-btn').style.display = 'none';
@@ -174,6 +186,53 @@ document.getElementById('mini-analyze-btn').addEventListener('click', async () =
     resultEl.textContent = 'Request failed: ' + e.message;
   }
 });
+
+// GitHub App connection
+document.getElementById('connect-github-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('connect-github-btn');
+  btn.textContent = 'Connecting...';
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/github/install-url', { headers: getAuthHeaders() });
+    if (!res.ok) { showFlash('GitHub App not configured.', 'red'); btn.textContent = 'Connect GitHub'; btn.disabled = false; return; }
+    const { install_url } = await res.json();
+    window.location.href = install_url;
+  } catch (e) {
+    showFlash('Could not get install URL.', 'red');
+    btn.textContent = 'Connect GitHub';
+    btn.disabled = false;
+  }
+});
+
+async function loadGithubAnalyses() {
+  const res = await fetch('/api/github/analyses', { headers: getAuthHeaders() });
+  if (!res.ok) return;
+  const { analyses } = await res.json();
+  if (!analyses || analyses.length === 0) return;
+  const container = document.getElementById('github-analyses-items');
+  const listEl = document.getElementById('github-analyses-list');
+  listEl.style.display = 'block';
+  container.innerHTML = analyses.map(a => {
+    const result = a.analysis_result || {};
+    const severity = result.severity || 'unknown';
+    const severityEmoji = { critical: '🔴', high: '🟠', medium: '🟡', low: '🟢' }[severity] || '⚪';
+    const date = a.created_at ? new Date(a.created_at).toLocaleDateString() : '';
+    const sha = a.head_sha ? a.head_sha.slice(0, 7) : '';
+    return `<div style="padding:0.625rem 0.75rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;margin-bottom:0.5rem;font-size:0.8rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
+        <span style="font-family:var(--font-mono);color:var(--text-muted);">${a.repo_full_name}</span>
+        <span style="color:var(--text-muted);">${date}</span>
+      </div>
+      <div>${severityEmoji} <strong>${result.error_type || 'Error'}</strong>${sha ? ` <span style="font-family:var(--font-mono);color:var(--text-muted);">@ ${sha}</span>` : ''}</div>
+      <div style="color:var(--text-muted);margin-top:0.25rem;">${result.root_cause || ''}</div>
+    </div>`;
+  }).join('');
+}
+
+// github=connected flash
+const _ghParam = new URLSearchParams(window.location.search).get('github');
+if (_ghParam === 'connected') showFlash('GitHub connected! CI failures will now be analyzed automatically.', 'green');
+if (_ghParam === 'error') showFlash('GitHub connection failed. Please try again.', 'red');
 
 // Init
 if (!isLoggedIn()) {

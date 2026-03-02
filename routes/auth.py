@@ -108,7 +108,8 @@ def me(current_user: dict = Depends(get_current_user)):
         cur = conn.cursor()
         cur.execute(
             "SELECT id, email, tier, api_key, daily_usage, monthly_usage, "
-            "subscription_status, billing_period_end, created_at FROM users WHERE id = %s",
+            "subscription_status, billing_period_end, created_at, "
+            "github_username, github_installation_id FROM users WHERE id = %s",
             (user_id,),
         )
         user = cur.fetchone()
