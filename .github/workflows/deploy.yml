@@ -1,0 +1,108 @@
+name: Auto Deploy to Production
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed file types
+        id: diff
+        run: |
+          git diff --name-only HEAD~1 HEAD 2>/dev/null > /tmp/changed.txt || git show --name-only --format="" HEAD > /tmp/changed.txt
+          echo "Changed files:"
+          cat /tmp/changed.txt
+
+          if grep -qE '^web/' /tmp/changed.txt; then
+            echo "web=true" >> $GITHUB_OUTPUT
+          else
+            echo "web=false" >> $GITHUB_OUTPUT
+          fi
+
+          if grep -qE '^(core|routes)/|^server\.py$|^requirements\.txt$|^Dockerfile$' /tmp/changed.txt; then
+            echo "backend=true" >> $GITHUB_OUTPUT
+          else
+            echo "backend=false" >> $GITHUB_OUTPUT
+          fi
+
+          MIGRATION=$(grep -E '^migrations/' /tmp/changed.txt | head -1 || true)
+          echo "migration_file=$MIGRATION" >> $GITHUB_OUTPUT
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        env:
+          WEB: ${{ steps.diff.outputs.web }}
+          BACKEND: ${{ steps.diff.outputs.backend }}
+          MIGRATION: ${{ steps.diff.outputs.migration_file }}
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: root
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          envs: WEB,BACKEND,MIGRATION
+          command_timeout: 10m
+          script: |
+            set -e
+            cd /opt/rail-debug
+            git pull origin master
+
+            if [ "$WEB" = "true" ]; then
+              echo "Copying web files..."
+              cp -r web/* /var/www/rail-debug/
+            fi
+
+            if [ "$BACKEND" = "true" ]; then
+              echo "Rebuilding backend container..."
+              docker compose up -d --build server
+            fi
+
+            if [ -n "$MIGRATION" ]; then
+              echo "MIGRATION_NEEDED: $MIGRATION"
+            fi
+
+      - name: Health check
+        run: |
+          echo "Waiting 30s before first check..."
+          sleep 30
+          for i in $(seq 1 10); do
+            STATUS=$(curl -sf https://debug.secureai.dev/api/health 2>/dev/null \
+              | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null \
+              || echo "")
+            if [ "$STATUS" = "ok" ]; then
+              echo "Health check passed on attempt $i"
+              exit 0
+            fi
+            echo "Attempt $i/10 failed — retrying in 30s..."
+            sleep 30
+          done
+          echo "Health check failed after 5 minutes"
+          exit 1
+
+      - name: Notify Telegram — success
+        if: success()
+        env:
+          MIGRATION: ${{ steps.diff.outputs.migration_file }}
+        run: |
+          if [ -n "$MIGRATION" ]; then
+            TEXT="✅ Auto-deploy complete — health check passed. ⚠️ Migration needed: $MIGRATION — run manually on Droplet."
+          else
+            TEXT="✅ Auto-deploy complete — health check passed. Sprint deployed successfully. Tell Claude sprint is closed."
+          fi
+          curl -sf "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            --data-urlencode "text=$TEXT" > /dev/null
+
+      - name: Notify Telegram — failure
+        if: failure()
+        run: |
+          TEXT="❌ Auto-deploy FAILED — check GitHub Actions logs: https://github.com/PhoenixWild29/rail-debug-prod/actions"
+          curl -sf "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            --data-urlencode "text=$TEXT" > /dev/null || true
