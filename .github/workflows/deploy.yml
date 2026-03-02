@@ -88,21 +88,25 @@ jobs:
       - name: Notify Telegram — success
         if: success()
         env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           MIGRATION: ${{ steps.diff.outputs.migration_file }}
         run: |
           if [ -n "$MIGRATION" ]; then
-            TEXT="✅ Auto-deploy complete — health check passed. ⚠️ Migration needed: $MIGRATION — run manually on Droplet."
+            MSG="Auto-deploy complete - health check passed. Migration needed: $MIGRATION - run manually on Droplet."
           else
-            TEXT="✅ Auto-deploy complete — health check passed. Sprint deployed successfully. Tell Claude sprint is closed."
+            MSG="Auto-deploy complete - health check passed. Sprint deployed successfully."
           fi
-          curl -sf "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-            --data-urlencode "text=$TEXT" > /dev/null
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "{\"chat_id\": \"${CHAT_ID}\", \"text\": \"${MSG}\"}" || true
 
       - name: Notify Telegram — failure
         if: failure()
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          TEXT="❌ Auto-deploy FAILED — check GitHub Actions logs: https://github.com/PhoenixWild29/rail-debug-prod/actions"
-          curl -sf "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-            --data-urlencode "text=$TEXT" > /dev/null || true
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "{\"chat_id\": \"${CHAT_ID}\", \"text\": \"Auto-deploy FAILED - check GitHub Actions logs.\"}" || true
