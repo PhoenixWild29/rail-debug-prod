@@ -3,6 +3,7 @@ core/auth_middleware.py — JWT decode, FastAPI auth dependencies, rate limiting
 Shared by routes/auth.py and routes/billing.py.
 """
 import os
+import threading
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -114,12 +115,26 @@ def check_and_increment_usage(user_id: int, tier: str) -> None:
                 detail=f"Monthly limit of {monthly_limit} analyses reached. Upgrade your plan.",
             )
 
+        new_monthly = monthly_usage + 1
         cur.execute(
             "UPDATE users SET daily_usage = %s, monthly_usage = %s, "
             "last_daily = %s, last_monthly = %s WHERE id = %s",
-            (daily_usage + 1, monthly_usage + 1, today, today, user_id),
+            (daily_usage + 1, new_monthly, today, today, user_id),
         )
         conn.commit()
+
+        # Fire 80% nudge email once when crossing the threshold
+        if monthly_limit and monthly_usage < int(monthly_limit * 0.8) <= new_monthly:
+            cur.execute("SELECT email, tier FROM users WHERE id = %s", (user_id,))
+            nudge_user = cur.fetchone()
+            if nudge_user:
+                from services.email_service import send_usage_nudge_email
+                threading.Thread(
+                    target=send_usage_nudge_email,
+                    args=(nudge_user["email"], nudge_user["tier"], new_monthly, monthly_limit),
+                    daemon=True,
+                ).start()
+
         cur.close()
     except HTTPException:
         raise
