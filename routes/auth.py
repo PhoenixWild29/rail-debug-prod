@@ -4,12 +4,14 @@ All routes mounted at /auth/* via server.py.
 """
 import os
 import secrets
+import threading
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr
 
 from core.auth_middleware import get_current_user, get_db_conn, make_token, TIER_MONTHLY_LIMITS, TIER_DAILY_LIMITS
+from services.email_service import send_welcome_email
 
 router = APIRouter(prefix="/auth")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -52,10 +54,19 @@ def register(req: RegisterRequest):
         conn.commit()
         cur.close()
 
-        return {
+        response = {
             "token": make_token(user["id"], user["email"], user["tier"]),
             "user": {"id": user["id"], "email": user["email"], "tier": user["tier"], "api_key": user["api_key"]},
         }
+
+        # Fire-and-forget welcome email (non-blocking)
+        threading.Thread(
+            target=send_welcome_email,
+            args=(user["email"], user["tier"]),
+            daemon=True,
+        ).start()
+
+        return response
     except HTTPException:
         raise
     except Exception as e:
