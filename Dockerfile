@@ -1,5 +1,6 @@
 # Multi-stage Dockerfile for Rail Debug (analyzer + server)
 # Python 3.12 slim, optimized for prod
+# Sprint 026: services/ directory now included in build context
 
 FROM python:3.12-slim AS builder
 
