@@ -42,6 +42,9 @@ app.include_router(billing_router)
 app.include_router(github_router)
 app.include_router(waitlist_router)
 
+from routes.dashboard import router as dashboard_router
+app.include_router(dashboard_router)
+
 # ── Request / Response Models ────────────────────────────────────
 
 class AnalyzeRequest(BaseModel):
