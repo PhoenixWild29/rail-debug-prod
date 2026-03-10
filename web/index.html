@@ -1,20 +1,20 @@
 <!DOCTYPE html>
-&lt;html lang=&quot;en&quot; class=&quot;scroll-smooth&quot;&gt;
-&lt;head&gt;
-  &lt;meta charset=&quot;utf-8&quot;&gt;
-  &lt;title&gt;Rail Debug - AI-Powered Error Analysis&lt;/title&gt;
-  &lt;meta name=&quot;description&quot; content=&quot;Stop guessing. Start fixing. AI-powered error analysis for Python tracebacks.&quot;&gt;
-  &lt;link rel=&quot;icon&quot; href=&quot;data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='.9em' font-size='90'&gt;🚂&lt;/text&gt;&lt;/svg&gt;&quot;&gt;
-  &lt;meta property=&quot;og:title&quot; content=&quot;Rail Debug&quot;&gt;
-  &lt;meta property=&quot;og:description&quot; content=&quot;AI-Powered Error Analysis&quot;&gt;
-  &lt;meta property=&quot;og:image&quot; content=&quot;/assets/img/og-image.svg&quot;&gt;
-  &lt;meta property=&quot;og:url&quot; content=&quot;https://debug.secureai.dev&quot;&gt;
-  &lt;meta name=&quot;twitter:card&quot; content=&quot;summary_large_image&quot;&gt;
-  &lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
-  &lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
-  &lt;link href=&quot;https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
-  &lt;script src=&quot;https://cdn.tailwindcss.com&quot;&gt;&lt;/script&gt;
-  &lt;script&gt;
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8">
+  <title>Rail Debug - AI-Powered Error Analysis</title>
+  <meta name="description" content="Stop guessing. Start fixing. AI-powered error analysis for Python tracebacks.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚂</text></svg>">
+  <meta property="og:title" content="Rail Debug">
+  <meta property="og:description" content="AI-Powered Error Analysis">
+  <meta property="og:image" content="/assets/img/og-image.svg">
+  <meta property="og:url" content="https://debug.secureai.dev">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -42,261 +42,316 @@
         }
       }
     }
-  &lt;/script&gt;
-  &lt;link rel=&quot;stylesheet&quot; href=&quot;/assets/css/custom.css&quot;&gt;
-&lt;/head&gt;
-&lt;body class=&quot;min-h-screen bg-bg-primary text-text-primary antialiased font-sans&quot;&gt;
+  </script>
+  <link rel="stylesheet" href="/assets/css/custom.css">
+</head>
+<body class="min-h-screen bg-bg-primary text-text-primary antialiased font-sans">
 
-  &lt;!-- Nav --&gt;
-  &lt;nav class=&quot;fixed top-0 left-0 right-0 z-50 bg-bg-secondary/95 backdrop-blur-md border-b border-border/50&quot;&gt;
-    &lt;div class=&quot;max-w-7xl mx-auto px-4 sm:px-6 lg:px-8&quot;&gt;
-      &lt;div class=&quot;flex justify-between items-center h-16&quot;&gt;
-        &lt;a href=&quot;/&quot; class=&quot;flex items-center space-x-2 font-mono text-2xl font-bold text-accent-green&quot;&gt;
-          &lt;span&gt;Rail Debug&lt;/span&gt;
-          &lt;span class=&quot;text-xs&quot;&gt;_&lt;/span&gt;
-        &lt;/a&gt;
-        &lt;div class=&quot;hidden md:flex items-center space-x-8&quot;&gt;
-          &lt;a href=&quot;#features&quot; class=&quot;text-text-muted hover:text-text-primary transition-colors&quot;&gt;Features&lt;/a&gt;
-          &lt;a href=&quot;/pricing.html&quot; class=&quot;text-text-muted hover:text-text-primary transition-colors&quot;&gt;Pricing&lt;/a&gt;
-          &lt;a href=&quot;https://github.com/PhoenixWild29/rail-debug-prod&quot; class=&quot;text-accent-blue hover:text-text-primary transition-colors&quot;&gt;GitHub&lt;/a&gt;
-          &lt;a href=&quot;/dashboard.html&quot; class=&quot;text-text-muted hover:text-text-primary transition-colors&quot;&gt;Dashboard&lt;/a&gt;
-          &lt;a href=&quot;?login=1&quot; class=&quot;btn-green px-6 py-2 rounded-lg text-sm font-semibold&quot;&gt;Get Started →&lt;/a&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/nav&gt;
+  <!-- Nav -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-bg-secondary/95 backdrop-blur-md border-b border-border/50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <a href="/" class="flex items-center space-x-2 font-mono text-2xl font-bold text-accent-green">
+          <span>Rail Debug</span>
+          <span class="text-xs">>_</span>
+        </a>
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="#features" class="text-text-muted hover:text-text-primary transition-colors">Features</a>
+          <a href="/pricing.html" class="text-text-muted hover:text-text-primary transition-colors">Pricing</a>
+          <a href="https://github.com/PhoenixWild29/rail-debug-prod" class="text-accent-blue hover:text-text-primary transition-colors">GitHub</a>
+          <a href="/dashboard.html" class="text-text-muted hover:text-text-primary transition-colors">Dashboard</a>
+          <a href="?login=1" class="btn-green px-6 py-2 rounded-lg text-sm font-semibold">Get Started →</a>
+        </div>
+      </div>
+    </div>
+  </nav>
 
-  &lt;!-- Hero --&gt;
-  &lt;section class=&quot;pt-24 pb-32 bg-gradient-to-b from-bg-primary to-bg-secondary&quot;&gt;
-    &lt;div class=&quot;max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center&quot;&gt;
-      &lt;h1 class=&quot;text-5xl md:text-7xl font-bold font-mono mb-6 bg-gradient-to-r from-accent-green to-accent-blue bg-clip-text text-transparent&quot;&gt;
+  <!-- Hero -->
+  <section class="pt-24 pb-32 bg-gradient-to-b from-bg-primary to-bg-secondary">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h1 class="text-5xl md:text-7xl font-bold font-mono mb-6 bg-gradient-to-r from-accent-green to-accent-blue bg-clip-text text-transparent">
         Stop guessing.
-      &lt;/h1&gt;
-      &lt;p class=&quot;text-2xl md:text-3xl text-text-muted mb-12 max-w-3xl mx-auto leading-relaxed&quot;&gt;
+      </h1>
+      <p class="text-2xl md:text-3xl text-text-muted mb-12 max-w-3xl mx-auto leading-relaxed">
         AI-powered error analysis. Paste a traceback, get root cause + fix in seconds.
-        &lt;br&gt;&lt;span class=&quot;font-mono text-accent-green&quot;&gt;Four tiers of intelligence — from instant regex to Claude Sonnet.&lt;/span&gt;
-      &lt;/p&gt;
-      &lt;div class=&quot;flex flex-col sm:flex-row gap-4 justify-center items-center max-w-2xl mx-auto&quot;&gt;
-        &lt;a href=&quot;#demo&quot; class=&quot;btn-green px-8 py-4 text-lg rounded-xl font-semibold w-full sm:w-auto&quot;&gt;Try it live&lt;/a&gt;
-        &lt;a href=&quot;#pricing&quot; class=&quot;bg-border/50 hover:bg-border px-8 py-4 text-lg rounded-xl font-semibold border border-border/50 w-full sm:w-auto transition-all&quot;&gt;See pricing&lt;/a&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/section&gt;
+        <br><span class="font-mono text-accent-green">Four tiers of intelligence — from instant regex to Claude Sonnet.</span>
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-2xl mx-auto">
+        <a href="#demo" class="btn-green px-8 py-4 text-lg rounded-xl font-semibold w-full sm:w-auto">Try it live</a>
+        <a href="#pricing" class="bg-border/50 hover:bg-border px-8 py-4 text-lg rounded-xl font-semibold border border-border/50 w-full sm:w-auto transition-all">See pricing</a>
+      </div>
+    </div>
+  </section>
 
-  &lt;!-- Live Demo --&gt;
-  &lt;section id=&quot;demo&quot; class=&quot;py-24 bg-bg-primary&quot;&gt;
-    &lt;div class=&quot;max-w-4xl mx-auto px-4 sm:px-6 lg:px-8&quot;&gt;
-      &lt;div class=&quot;text-center mb-16&quot;&gt;
-        &lt;h2 class=&quot;text-4xl md:text-5xl font-bold font-mono mb-6&quot;&gt;Live Demo&lt;/h2&gt;
-        &lt;p class=&quot;text-xl text-text-muted max-w-2xl mx-auto&quot;&gt;Paste any Python traceback. Watch the AI cascade kick in.&lt;/p&gt;
-      &lt;/div&gt;
-      &lt;div class=&quot;grid lg:grid-cols-2 gap-8 items-start&quot;&gt;
-        &lt;div&gt;
-          &lt;div class=&quot;bg-bg-secondary p-8 rounded-2xl border border-border&quot;&gt;
-            &lt;div class=&quot;mb-4 flex gap-2&quot;&gt;
-              &lt;label for=&quot;traceback-input&quot; class=&quot;font-mono text-lg font-semibold&quot;&gt;Traceback:&lt;/label&gt;
-              &lt;button id=&quot;load-example&quot; class=&quot;ml-auto px-4 py-1 bg-accent-blue/20 hover:bg-accent-blue/40 text-accent-blue text-sm rounded font-mono&quot;&gt;Example&lt;/button&gt;
-            &lt;/div&gt;
-            &lt;textarea
-              id=&quot;traceback-input&quot;
-              rows=&quot;10&quot;
-              class=&quot;w-full bg-bg-tertiary border border-border rounded-xl p-4 font-mono text-sm resize-vertical focus:outline-none focus:border-accent-green focus:ring-2 focus:ring-accent-green/20&quot;
-              placeholder=&quot;Paste your Python traceback here...&quot;&gt;&lt;/textarea&gt;
-            &lt;button
-              id=&quot;analyze-btn&quot;
-              class=&quot;mt-4 w-full btn-green py-4 px-6 rounded-xl text-lg font-semibold font-mono&quot;&gt;
+  <!-- Live Demo -->
+  <section id="demo" class="py-24 bg-bg-primary">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl md:text-5xl font-bold font-mono mb-6">Live Demo</h2>
+        <p class="text-xl text-text-muted max-w-2xl mx-auto">Paste any Python traceback. Watch the AI cascade kick in.</p>
+      </div>
+      <div class="grid lg:grid-cols-2 gap-8 items-start">
+        <div>
+          <div class="bg-bg-secondary p-8 rounded-2xl border border-border">
+            <div class="mb-4 flex gap-2">
+              <label for="traceback-input" class="font-mono text-lg font-semibold">Traceback:</label>
+              <button id="load-example" class="ml-auto px-4 py-1 bg-accent-blue/20 hover:bg-accent-blue/40 text-accent-blue text-sm rounded font-mono">Example</button>
+            </div>
+            <textarea
+              id="traceback-input"
+              rows="10"
+              class="w-full bg-bg-tertiary border border-border rounded-xl p-4 font-mono text-sm resize-vertical focus:outline-none focus:border-accent-green focus:ring-2 focus:ring-accent-green/20"
+              placeholder="Paste your Python traceback here..."></textarea>
+            <button
+              id="analyze-btn"
+              class="mt-4 w-full btn-green py-4 px-6 rounded-xl text-lg font-semibold font-mono">
               Analyze →
-            &lt;/button&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-        &lt;div&gt;
-          &lt;div id=&quot;demo-output&quot; class=&quot;min-h-[400px] bg-bg-tertiary border-2 border-dashed border-border/50 rounded-2xl p-8 flex items-center justify-center text-text-muted font-mono&quot;&gt;
+            </button>
+          </div>
+        </div>
+        <div>
+          <div id="demo-output" class="min-h-[400px] bg-bg-tertiary border-2 border-dashed border-border/50 rounded-2xl p-8 flex items-center justify-center text-text-muted font-mono">
             Analysis will appear here...
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/section&gt;
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-  &lt;!-- Features --&gt;
-  &lt;section id=&quot;features&quot; class=&quot;py-24 bg-bg-secondary&quot;&gt;
-    &lt;div class=&quot;max-w-7xl mx-auto px-4 sm:px-6 lg:px-8&quot;&gt;
-      &lt;div class=&quot;text-center mb-20&quot;&gt;
-        &lt;h2 class=&quot;text-4xl md:text-5xl font-bold font-mono mb-6&quot;&gt;Why Rail Debug?&lt;/h2&gt;
-        &lt;p class=&quot;text-xl text-text-muted max-w-2xl mx-auto&quot;&gt;Built for developers who hate debugging.&lt;/p&gt;
-      &lt;/div&gt;
-      &lt;div class=&quot;grid md:grid-cols-2 lg:grid-cols-3 gap-8&quot;&gt;
-        &lt;div class=&quot;bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group&quot;&gt;
-          &lt;div class=&quot;w-16 h-16 bg-accent-green/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform&quot;&gt;
-            &lt;span class=&quot;text-2xl&quot;&gt;🔍&lt;/span&gt;
-          &lt;/div&gt;
-          &lt;h3 class=&quot;text-2xl font-bold font-mono mb-4&quot;&gt;Quad-Tier Sentinel&lt;/h3&gt;
-          &lt;p class=&quot;text-text-muted&quot;&gt;Regex → Grok Fast → Claude Haiku → Claude Sonnet. Escalates automatically.&lt;/p&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group&quot;&gt;
-          &lt;div class=&quot;w-16 h-16 bg-accent-blue/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform&quot;&gt;
-            &lt;span class=&quot;text-2xl&quot;&gt;🔗&lt;/span&gt;
-          &lt;/div&gt;
-          &lt;h3 class=&quot;text-2xl font-bold font-mono mb-4&quot;&gt;Git Blame Context&lt;/h3&gt;
-          &lt;p class=&quot;text-text-muted&quot;&gt;Know who changed the broken line and when.&lt;/p&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group&quot;&gt;
-          &lt;div class=&quot;w-16 h-16 bg-accent-green/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform&quot;&gt;
-            &lt;span class=&quot;text-2xl&quot;&gt;📦&lt;/span&gt;
-          &lt;/div&gt;
-          &lt;h3 class=&quot;text-2xl font-bold font-mono mb-4&quot;&gt;Multi-Repo Mode&lt;/h3&gt;
-          &lt;p class=&quot;text-text-muted&quot;&gt;Scan your entire codebase portfolio at once.&lt;/p&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group&quot;&gt;
-          &lt;div class=&quot;w-16 h-16 bg-accent-blue/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform&quot;&gt;
-            &lt;span class=&quot;text-2xl&quot;&gt;🔔&lt;/span&gt;
-          &lt;/div&gt;
-          &lt;h3 class=&quot;text-2xl font-bold font-mono mb-4&quot;&gt;GitHub App&lt;/h3&gt;
-          &lt;p class=&quot;text-text-muted&quot;&gt;CI fails → root cause + fix posted as a commit comment. Zero friction.&lt;/p&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group&quot;&gt;
-          &lt;div class=&quot;w-16 h-16 bg-accent-green/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform&quot;&gt;
-            &lt;span class=&quot;text-2xl&quot;&gt;🐳&lt;/span&gt;
-          &lt;/div&gt;
-          &lt;h3 class=&quot;text-2xl font-bold font-mono mb-4&quot;&gt;Self-Hostable&lt;/h3&gt;
-          &lt;p class=&quot;text-text-muted&quot;&gt;Docker + docker-compose, runs anywhere.&lt;/p&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group&quot;&gt;
-          &lt;div class=&quot;w-16 h-16 bg-accent-blue/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform&quot;&gt;
-            &lt;span class=&quot;text-2xl&quot;&gt;🧠&lt;/span&gt;
-          &lt;/div&gt;
-          &lt;h3 class=&quot;text-2xl font-bold font-mono mb-4&quot;&gt;Learning Loop&lt;/h3&gt;
-          &lt;p class=&quot;text-text-muted&quot;&gt;Pattern memory across analyses, gets smarter over time.&lt;/p&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/section&gt;
+  <!-- Features -->
+  <section id="features" class="py-24 bg-bg-secondary">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-20">
+        <h2 class="text-4xl md:text-5xl font-bold font-mono mb-6">Why Rail Debug?</h2>
+        <p class="text-xl text-text-muted max-w-2xl mx-auto">Built for developers who hate debugging.</p>
+      </div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group">
+          <div class="w-16 h-16 bg-accent-green/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <span class="text-2xl">🔍</span>
+          </div>
+          <h3 class="text-2xl font-bold font-mono mb-4">Quad-Tier Sentinel</h3>
+          <p class="text-text-muted">Regex → Grok Fast → Claude Haiku → Claude Sonnet. Escalates automatically.</p>
+        </div>
+        <div class="bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group">
+          <div class="w-16 h-16 bg-accent-blue/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <span class="text-2xl">🔗</span>
+          </div>
+          <h3 class="text-2xl font-bold font-mono mb-4">Git Blame Context</h3>
+          <p class="text-text-muted">Know who changed the broken line and when.</p>
+        </div>
+        <div class="bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group">
+          <div class="w-16 h-16 bg-accent-green/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <span class="text-2xl">📦</span>
+          </div>
+          <h3 class="text-2xl font-bold font-mono mb-4">Multi-Repo Mode</h3>
+          <p class="text-text-muted">Scan your entire codebase portfolio at once.</p>
+        </div>
+        <div class="bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group">
+          <div class="w-16 h-16 bg-accent-blue/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <span class="text-2xl">🔔</span>
+          </div>
+          <h3 class="text-2xl font-bold font-mono mb-4">GitHub App</h3>
+          <p class="text-text-muted">CI fails → root cause + fix posted as a commit comment. Zero friction.</p>
+        </div>
+        <div class="bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group">
+          <div class="w-16 h-16 bg-accent-green/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <span class="text-2xl">🐳</span>
+          </div>
+          <h3 class="text-2xl font-bold font-mono mb-4">Self-Hostable</h3>
+          <p class="text-text-muted">Docker + docker-compose, runs anywhere.</p>
+        </div>
+        <div class="bg-bg-primary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all group">
+          <div class="w-16 h-16 bg-accent-blue/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <span class="text-2xl">🧠</span>
+          </div>
+          <h3 class="text-2xl font-bold font-mono mb-4">Learning Loop</h3>
+          <p class="text-text-muted">Pattern memory across analyses, gets smarter over time.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-  &lt;!-- Pricing Teaser --&gt;
-  &lt;section id=&quot;pricing&quot; class=&quot;py-24 bg-bg-primary&quot;&gt;
-    &lt;div class=&quot;max-w-7xl mx-auto px-4 sm:px-6 lg:px-8&quot;&gt;
-      &lt;div class=&quot;text-center mb-20&quot;&gt;
-        &lt;h2 class=&quot;text-4xl md:text-5xl font-bold font-mono mb-6&quot;&gt;Simple Pricing&lt;/h2&gt;
-        &lt;p class=&quot;text-xl text-text-muted max-w-2xl mx-auto&quot;&gt;Choose your tier. Pay monthly. Cancel anytime.&lt;/p&gt;
-      &lt;/div&gt;
-      &lt;div class=&quot;grid md:grid-cols-3 gap-8 max-w-4xl mx-auto&quot;&gt;
-        &lt;div class=&quot;bg-bg-secondary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all relative&quot;&gt;
-          &lt;div class=&quot;absolute -top-5 left-1/2 transform -translate-x-1/2 bg-accent-green text-black px-4 py-1 rounded-xl text-sm font-mono&quot;&gt;Most Popular&lt;/div&gt;
-          &lt;h3 class=&quot;text-3xl font-bold font-mono mb-6 text-accent-green&quot;&gt;Dev&lt;/h3&gt;
-          &lt;div class=&quot;text-4xl font-bold font-mono mb-8&quot;&gt;$19&lt;small class=&quot;text-lg text-text-muted&quot;&gt;/mo&lt;/small&gt;&lt;/div&gt;
-          &lt;ul class=&quot;space-y-3 mb-8 text-text-muted&quot;&gt;
-            &lt;li class=&quot;flex items-center&quot;&gt;&lt;span class=&quot;w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0&quot;&gt;&lt;/span&gt;All 4 tiers&lt;/li&gt;
-            &lt;li class=&quot;flex items-center&quot;&gt;&lt;span class=&quot;w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0&quot;&gt;&lt;/span&gt;10k analyses/mo&lt;/li&gt;
-            &lt;li class=&quot;flex items-center&quot;&gt;&lt;span class=&quot;w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0&quot;&gt;&lt;/span&gt;API + IDE&lt;/li&gt;
-            &lt;li class=&quot;flex items-center&quot;&gt;&lt;span class=&quot;w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0&quot;&gt;&lt;/span&gt;Email support&lt;/li&gt;
-          &lt;/ul&gt;
-          &lt;a href=&quot;?login=1&amp;plan=dev&quot; class=&quot;block w-full btn-green py-4 px-6 rounded-xl text-lg font-semibold font-mono text-center&quot; data-tier=&quot;dev&quot;&gt;Get Started&lt;/a&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;bg-bg-secondary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all md:col-span-1 lg:col-span-1&quot;&gt;
-          &lt;h3 class=&quot;text-3xl font-bold font-mono mb-6&quot;&gt;Free&lt;/h3&gt;
-          &lt;div class=&quot;text-4xl font-bold font-mono mb-8&quot;&gt;$0&lt;/div&gt;
-          &lt;ul class=&quot;space-y-3 mb-8 text-text-muted&quot;&gt;
-            &lt;li class=&quot;flex items-center&quot;&gt;&lt;span class=&quot;w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0&quot;&gt;&lt;/span&gt;Tier 1 only&lt;/li&gt;
-            &lt;li class=&quot;flex items-center&quot;&gt;&lt;span class=&quot;w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0&quot;&gt;&lt;/span&gt;100 analyses/mo&lt;/li&gt;
-            &lt;li class=&quot;flex items-center line-through text-text-muted&quot;&gt;&lt;span class=&quot;w-5 h-5 bg-border rounded mr-3 flex-shrink-0&quot;&gt;&lt;/span&gt;API&lt;/li&gt;
-          &lt;/ul&gt;
-          &lt;a href=&quot;?login=1&quot; class=&quot;block w-full bg-border/50 hover:bg-border py-4 px-6 rounded-xl text-lg font-semibold border border-border/50 font-mono text-center transition-all&quot; data-tier=&quot;free&quot;&gt;Get Started Free&lt;/a&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;bg-bg-secondary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all&quot;&gt;
-          &lt;h3 class=&quot;text-3xl font-bold font-mono mb-6&quot;&gt;Team&lt;/h3&gt;
-          &lt;div class=&quot;text-4xl font-bold font-mono mb-8&quot;&gt;$99&lt;small class=&quot;text-lg text-text-muted&quot;&gt;/mo&lt;/small&gt;&lt;/div&gt;
-          &lt;ul class=&quot;space-y-3 mb-8 text-text-muted&quot;&gt;
-            &lt;li class=&quot;flex items-center&quot;&gt;&lt;span class=&quot;w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0&quot;&gt;&lt;/span&gt;All 4 tiers&lt;/li&gt;
-            &lt;li class=&quot;flex items-center&quot;&gt;&lt;span class=&quot;w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0&quot;&gt;&lt;/span&gt;100k analyses/mo&lt;/li&gt;
-            &lt;li class=&quot;flex items-center&quot;&gt;&lt;span class=&quot;w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0&quot;&gt;&lt;/span&gt;Multi-repo&lt;/li&gt;
-            &lt;li class=&quot;flex items-center&quot;&gt;&lt;span class=&quot;w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0&quot;&gt;&lt;/span&gt;Priority support&lt;/li&gt;
-          &lt;/ul&gt;
-          &lt;a href=&quot;?login=1&amp;plan=team&quot; class=&quot;block w-full bg-accent-blue/80 hover:bg-accent-blue py-4 px-6 rounded-xl text-lg font-semibold text-white font-mono text-center transition-all&quot; data-tier=&quot;team&quot;&gt;Get Started&lt;/a&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-      &lt;p class=&quot;text-center mt-12 text-text-muted text-sm&quot;&gt;&lt;a href=&quot;/pricing.html&quot; class=&quot;text-accent-blue hover:text-text-primary&quot;&gt;Full pricing table →&lt;/a&gt;&lt;/p&gt;
-    &lt;/div&gt;
-  &lt;/section&gt;
+  <!-- Pricing Teaser -->
+  <section id="pricing" class="py-24 bg-bg-primary">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-20">
+        <h2 class="text-4xl md:text-5xl font-bold font-mono mb-6">Simple Pricing</h2>
+        <p class="text-xl text-text-muted max-w-2xl mx-auto">Choose your tier. Pay monthly. Cancel anytime.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <div class="bg-bg-secondary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all relative">
+          <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-accent-green text-black px-4 py-1 rounded-xl text-sm font-mono">Most Popular</div>
+          <h3 class="text-3xl font-bold font-mono mb-6 text-accent-green">Dev</h3>
+          <div class="text-4xl font-bold font-mono mb-8">$19<small class="text-lg text-text-muted">/mo</small></div>
+          <ul class="space-y-3 mb-8 text-text-muted">
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>All 4 tiers</li>
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>10k analyses/mo</li>
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>API + IDE</li>
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>Email support</li>
+          </ul>
+          <a href="/dashboard?plan=dev" class="block w-full btn-green py-4 px-6 rounded-xl text-lg font-semibold font-mono text-center" data-tier="dev">Get Started</a>
+        </div>
+        <div class="bg-bg-secondary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all md:col-span-1 lg:col-span-1">
+          <h3 class="text-3xl font-bold font-mono mb-6">Free</h3>
+          <div class="text-4xl font-bold font-mono mb-8">$0</div>
+          <ul class="space-y-3 mb-8 text-text-muted">
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>Tier 1 only</li>
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>100 analyses/mo</li>
+            <li class="flex items-center line-through text-text-muted"><span class="w-5 h-5 bg-border rounded mr-3 flex-shrink-0"></span>API</li>
+          </ul>
+          <a href="/dashboard" class="block w-full bg-border/50 hover:bg-border py-4 px-6 rounded-xl text-lg font-semibold border border-border/50 font-mono text-center transition-all" data-tier="free">Get Started Free</a>
+        </div>
+        <div class="bg-bg-secondary p-8 rounded-2xl border border-border hover:border-accent-green/50 transition-all">
+          <h3 class="text-3xl font-bold font-mono mb-6">Team</h3>
+          <div class="text-4xl font-bold font-mono mb-8">$99<small class="text-lg text-text-muted">/mo</small></div>
+          <ul class="space-y-3 mb-8 text-text-muted">
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>All 4 tiers</li>
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>100k analyses/mo</li>
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>Multi-repo</li>
+            <li class="flex items-center"><span class="w-5 h-5 bg-accent-green rounded mr-3 flex-shrink-0"></span>Priority support</li>
+          </ul>
+          <a href="/dashboard?plan=team" class="block w-full bg-accent-blue/80 hover:bg-accent-blue py-4 px-6 rounded-xl text-lg font-semibold text-white font-mono text-center transition-all" data-tier="team">Get Started</a>
+        </div>
+      </div>
+      <p class="text-center mt-12 text-text-muted text-sm"><a href="/pricing.html" class="text-accent-blue hover:text-text-primary">Full pricing table →</a></p>
+    </div>
+  </section>
 
-  &lt;!-- Stats --&gt;
-  &lt;div class=&quot;bg-bg-tertiary py-12&quot;&gt;
-    &lt;div class=&quot;max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center&quot;&gt;
-      &lt;div class=&quot;grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-16 text-lg font-mono&quot;&gt;
-        &lt;div&gt;&lt;span class=&quot;text-3xl font-bold text-accent-green&quot;&gt;&amp;lt; 100ms&lt;/span&gt; response&lt;/div&gt;
-        &lt;div&gt;&lt;span class=&quot;text-3xl font-bold text-accent-green&quot;&gt;6&lt;/span&gt; languages&lt;/div&gt;
-        &lt;div&gt;&lt;span class=&quot;text-3xl font-bold text-accent-green&quot;&gt;4&lt;/span&gt;-tier AI&lt;/div&gt;
-        &lt;div&gt;&lt;span class=&quot;text-3xl font-bold text-accent-blue&quot;&gt;open source&lt;/span&gt;&lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
+  <!-- Stats -->
+  <div class="bg-bg-tertiary py-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-16 text-lg font-mono">
+        <div><span class="text-3xl font-bold text-accent-green">&lt; 100ms</span> response</div>
+        <div><span class="text-3xl font-bold text-accent-green">6</span> languages</div>
+        <div><span class="text-3xl font-bold text-accent-green">4</span>-tier AI</div>
+        <div><span class="text-3xl font-bold text-accent-blue">open source</span></div>
+      </div>
+    </div>
+  </div>
 
-  &lt;!-- Waitlist --&gt;
-  &lt;section id=&quot;waitlist&quot; class=&quot;py-24 bg-gradient-to-t from-bg-secondary to-bg-primary&quot;&gt;
-    &lt;div class=&quot;max-w-md mx-auto px-4 sm:px-6 lg:px-8&quot;&gt;
-      &lt;div class=&quot;text-center&quot;&gt;
-        &lt;h2 class=&quot;text-4xl md:text-5xl font-bold font-mono mb-6&quot;&gt;Ready to ship better code?&lt;/h2&gt;
-        &lt;p class=&quot;text-xl text-text-muted mb-12&quot;&gt;Start free. No credit card required.&lt;/p&gt;
-        &lt;a href=&quot;?login=1&quot; class=&quot;block mx-auto btn-green py-5 px-6 rounded-xl text-xl font-semibold font-mono w-full max-w-md&quot;&gt;Create Free Account&lt;/a&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/section&gt;
+  <!-- Waitlist -->
+  <section id="waitlist" class="py-24 bg-gradient-to-t from-bg-secondary to-bg-primary">
+    <div class="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center">
+        <h2 class="text-4xl md:text-5xl font-bold font-mono mb-6">Ready to ship better code?</h2>
+        <p class="text-xl text-text-muted mb-12">Start free. No credit card required.</p>
+        <a href="?login=1" class="block mx-auto btn-green py-5 px-6 rounded-xl text-xl font-semibold font-mono w-full max-w-md">Create Free Account</a>
+      </div>
+    </div>
+  </section>
 
-  &lt;!-- Footer --&gt;
-  &lt;footer class=&quot;bg-bg-tertiary py-12 border-t border-border&quot;&gt;
-    &lt;div class=&quot;max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center&quot;&gt;
-      &lt;div class=&quot;flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0&quot;&gt;
-        &lt;div class=&quot;font-mono text-lg font-bold text-accent-green&quot;&gt;© 2026 Rail Debug&lt;/div&gt;
-        &lt;div class=&quot;flex space-x-6&quot;&gt;
-          &lt;a href=&quot;https://github.com/PhoenixWild29/rail-debug-prod&quot; class=&quot;text-accent-blue hover:text-text-primary transition-colors font-mono&quot;&gt;GitHub&lt;/a&gt;
-          &lt;a href=&quot;mailto:hello@secureai.dev&quot; class=&quot;text-text-muted hover:text-text-primary transition-colors&quot;&gt;hello@secureai.dev&lt;/a&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/footer&gt;
+  <!-- Footer -->
+  <footer class="bg-bg-tertiary py-12 border-t border-border">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+        <div class="font-mono text-lg font-bold text-accent-green">© 2026 Rail Debug</div>
+        <div class="flex space-x-6">
+          <a href="https://github.com/PhoenixWild29/rail-debug-prod" class="text-accent-blue hover:text-text-primary transition-colors font-mono">GitHub</a>
+          <a href="mailto:hello@secureai.dev" class="text-text-muted hover:text-text-primary transition-colors">hello@secureai.dev</a>
+        </div>
+      </div>
+    </div>
+  </footer>
 
-  &lt;!-- Auth Modal --&gt;
-  &lt;div id=&quot;auth-modal&quot; class=&quot;fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4&quot; style=&quot;display: none;&quot;&gt;
-    &lt;div class=&quot;w-full max-w-md mx-4&quot;&gt;
-      &lt;div class=&quot;bg-bg-secondary rounded-2xl p-8 border border-border shadow-2xl relative&quot;&gt;
-        &lt;button onclick=&quot;hideAuthModal()&quot; class=&quot;absolute top-6 right-6 text-3xl text-text-muted hover:text-text-primary transition-colors font-mono&quot;&gt;&amp;times;&lt;/button&gt;
-        
-        &lt;div class=&quot;flex border-b border-border/50 mb-8&quot;&gt;
-          &lt;button data-tab=&quot;login-tab&quot; class=&quot;flex-1 py-4 px-6 font-mono font-semibold text-sm border-b-2 border-transparent hover:border-accent-green/50 tab-active:border-accent-green tab-active:text-accent-green hover:text-text-primary transition-colors tab-active:bg-bg-primary/50 tab-active&quot;&gt;Login&lt;/button&gt;
-          &lt;button data-tab=&quot;register-tab&quot; class=&quot;flex-1 py-4 px-6 font-mono font-semibold text-sm border-l border-border/50 border-b-2 border-transparent hover:border-accent-green/50 tab-active:border-accent-green tab-active:text-accent-green hover:text-text-primary transition-colors tab-active:bg-bg-primary/50&quot;&gt;Create Account&lt;/button&gt;
-        &lt;/div&gt;
-        
-        &lt;div id=&quot;login-tab&quot; class=&quot;tab-pane&quot;&gt;
-          &lt;form id=&quot;login-form&quot; class=&quot;space-y-6&quot;&gt;
-            &lt;div&gt;
-              &lt;input id=&quot;login-email&quot; type=&quot;email&quot; required autocomplete=&quot;email&quot; placeholder=&quot;your@email.com&quot; class=&quot;w-full bg-bg-tertiary border border-border rounded-xl px-4 py-3 font-mono text-sm focus:outline-none focus:border-accent-green focus:ring-2 focus:ring-accent-green/20 placeholder:text-text-muted&quot;&gt;
-            &lt;/div&gt;
-            &lt;div&gt;
-              &lt;input id=&quot;login-password&quot; type=&quot;password&quot; required autocomplete=&quot;current-password&quot; placeholder=&quot;Password&quot; class=&quot;w-full bg-bg-tertiary border border-border rounded-xl px-4 py-3 font-mono text-sm focus:outline-none focus:border-accent-green focus:ring-2 focus:ring-accent-green/20 placeholder:text-text-muted&quot;&gt;
-            &lt;/div&gt;
-            &lt;button type=&quot;submit&quot; class=&quot;w-full bg-accent-green hover:bg-accent-green/90 text-black font-mono font-semibold py-4 px-6 rounded-xl text-lg transition-all shadow-lg hover:shadow-xl&quot;&gt;Sign In&lt;/button&gt;
-            &lt;div id=&quot;login-error&quot; class=&quot;hidden mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl text-orange-400 font-mono text-sm text-center&quot;&gt;&lt;/div&gt;
-          &lt;/form&gt;
-        &lt;/div&gt;
-        
-        &lt;div id=&quot;register-tab&quot; class=&quot;tab-pane hidden&quot;&gt;
-          &lt;form id=&quot;register-form&quot; class=&quot;space-y-6&quot;&gt;
-            &lt;div&gt;
-              &lt;input id=&quot;register-email&quot; type=&quot;email&quot; required autocomplete=&quot;email&quot; placeholder=&quot;your@email.com&quot; class=&quot;w-full bg-bg-tertiary border border-border rounded-xl px-4 py-3 font-mono text-sm focus:outline-none focus:border-accent-green focus:ring-2 focus:ring-accent-green/20 placeholder:text-text-muted&quot;&gt;
-            &lt;/div&gt;
-            &lt;div&gt;
-              &lt;input id=&quot;register-password&quot; type=&quot;password&quot; required autocomplete=&quot;new-password&quot; placeholder=&quot;Password (8+ chars)&quot; class=&quot;w-full bg-bg-tertiary border border-border rounded-xl px-4 py-3 font-mono text-sm focus:outline-none focus:border-accent-green focus:ring-2 focus:ring-accent-green/20 placeholder:text-text-muted&quot;&gt;
-            &lt;/div&gt;
-            &lt;button type=&quot;submit&quot; class=&quot;w-full bg-accent-green hover:bg-accent-green/90 text-black font-mono font-semibold py-4 px-6 rounded-xl text-lg transition-all shadow-lg hover:shadow-xl&quot;&gt;Create Account&lt;/button&gt;
-            &lt;div id=&quot;register-error&quot; class=&quot;hidden mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl text-orange-400 font-mono text-sm text-center&quot;&gt;&lt;/div&gt;
-          &lt;/form&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
+  <!-- Auth Modal -->
+  <div id="auth-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; align-items:center; justify-content:center;">
+    <div style="max-width:420px; width:90%; background:var(--bg-secondary); border:1px solid var(--border); border-radius:16px; padding:2rem; position:relative;">
+      <button onclick="hideAuthModal()" style="position:absolute; top:12px; right:16px; background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
+      <h2 style="font-family:'JetBrains Mono',monospace; font-size:1.5rem; font-weight:700; color:var(--accent-green); margin-bottom:1.5rem; text-align:center;">Rail Debug</h2>
+      <div style="display:flex; gap:0; margin-bottom:1.5rem; border-bottom:1px solid var(--border);">
+        <button id="tab-login" onclick="switchTab('login')" style="flex:1; padding:0.75rem; background:none; border:none; border-bottom:2px solid var(--accent-green); color:var(--text-primary); font-family:'JetBrains Mono',monospace; font-weight:600; font-size:0.875rem; cursor:pointer;">Login</button>
+        <button id="tab-register" onclick="switchTab('register')" style="flex:1; padding:0.75rem; background:none; border:none; border-bottom:2px solid transparent; color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-weight:600; font-size:0.875rem; cursor:pointer;">Create Account</button>
+      </div>
+      <div id="auth-error" style="display:none; background:rgba(248,81,73,0.1); border:1px solid rgba(248,81,73,0.3); border-radius:8px; padding:0.75rem; margin-bottom:1rem; color:#f85149; font-size:0.8rem; text-align:center;"></div>
+      <form id="auth-form" onsubmit="handleAuth(event)">
+        <input id="auth-email" type="email" placeholder="Email" required style="width:100%; padding:0.75rem 1rem; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--text-primary); font-family:'JetBrains Mono',monospace; font-size:0.875rem; margin-bottom:0.75rem; box-sizing:border-box;">
+        <input id="auth-password" type="password" placeholder="Password (min 8 characters)" required minlength="8" style="width:100%; padding:0.75rem 1rem; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--text-primary); font-family:'JetBrains Mono',monospace; font-size:0.875rem; margin-bottom:1.25rem; box-sizing:border-box;">
+        <button id="auth-submit" type="submit" class="btn-green" style="width:100%; padding:0.875rem; border-radius:8px; font-family:'JetBrains Mono',monospace; font-weight:600; font-size:1rem; cursor:pointer; border:none;">Login</button>
+      </form>
+    </div>
+  </div>
 
-  &lt;script src=&quot;/assets/js/auth.js&quot;&gt;&lt;/script&gt;
-  &lt;script src=&quot;/assets/js/login.js&quot;&gt;&lt;/script&gt;
-  &lt;script src=&quot;/assets/js/demo.js&quot;&gt;&lt;/script&gt;
-  &lt;script src=&quot;/assets/js/waitlist.js&quot;&gt;&lt;/script&gt;
-&lt;/body&gt;
-&lt;/html&gt;
+  <script src="/assets/js/demo.js"></script>
+  <script src="/assets/js/waitlist.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script>
+    var authMode = 'login';
+    function showAuthModal() {
+      document.getElementById('auth-modal').style.display = 'flex';
+    }
+    function hideAuthModal() {
+      document.getElementById('auth-modal').style.display = 'none';
+      document.getElementById('auth-error').style.display = 'none';
+    }
+    function switchTab(mode) {
+      authMode = mode;
+      var loginTab = document.getElementById('tab-login');
+      var regTab = document.getElementById('tab-register');
+      var btn = document.getElementById('auth-submit');
+      if (mode === 'login') {
+        loginTab.style.borderBottomColor = 'var(--accent-green)';
+        loginTab.style.color = 'var(--text-primary)';
+        regTab.style.borderBottomColor = 'transparent';
+        regTab.style.color = 'var(--text-muted)';
+        btn.textContent = 'Login';
+      } else {
+        regTab.style.borderBottomColor = 'var(--accent-green)';
+        regTab.style.color = 'var(--text-primary)';
+        loginTab.style.borderBottomColor = 'transparent';
+        loginTab.style.color = 'var(--text-muted)';
+        btn.textContent = 'Create Account';
+      }
+      document.getElementById('auth-error').style.display = 'none';
+    }
+    function handleAuth(e) {
+      e.preventDefault();
+      var email = document.getElementById('auth-email').value;
+      var password = document.getElementById('auth-password').value;
+      var btn = document.getElementById('auth-submit');
+      var errEl = document.getElementById('auth-error');
+      var endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      btn.textContent = 'Loading...';
+      btn.disabled = true;
+      fetch(endpoint, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email: email, password: password})
+      })
+      .then(function(res) { return res.json().then(function(data) { return {ok: res.ok, data: data}; }); })
+      .then(function(result) {
+        if (result.ok && result.data.token) {
+          setToken(result.data.token);
+          window.location.href = '/dashboard.html';
+        } else {
+          errEl.textContent = result.data.detail || 'Something went wrong';
+          errEl.style.display = 'block';
+          btn.textContent = authMode === 'login' ? 'Login' : 'Create Account';
+          btn.disabled = false;
+        }
+      })
+      .catch(function(err) {
+        errEl.textContent = 'Network error — please try again';
+        errEl.style.display = 'block';
+        btn.textContent = authMode === 'login' ? 'Login' : 'Create Account';
+        btn.disabled = false;
+      });
+    }
+    // Auto-open modal if ?login=1
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('login') === '1') {
+        if (typeof isLoggedIn === 'function' && isLoggedIn()) {
+          window.location.href = '/dashboard.html';
+        } else {
+          showAuthModal();
+        }
+      }
+    })();
+    // Close on backdrop click
+    document.getElementById('auth-modal').addEventListener('click', function(e) {
+      if (e.target === this) hideAuthModal();
+    });
+  </script>
+</body>
+</html>
