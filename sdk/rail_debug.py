@@ -17,19 +17,26 @@ import httpx
 class RailDebug:
     """Lightweight client for the Rail Debug API."""
 
-    def __init__(self, base_url: str = "http://localhost:8000", timeout: float = 120.0):
+    def __init__(self, base_url: str = "http://localhost:8000", api_key: Optional[str] = None, timeout: float = 120.0):
         self.base_url = base_url.rstrip("/")
+        self.api_key = api_key
         self.timeout = timeout
+
+    def _headers(self) -> dict:
+        h = {"Content-Type": "application/json"}
+        if self.api_key:
+            h["X-API-Key"] = self.api_key
+        return h
 
     def _post(self, path: str, payload: dict) -> dict:
         with httpx.Client(timeout=self.timeout) as client:
-            resp = client.post(f"{self.base_url}{path}", json=payload)
+            resp = client.post(f"{self.base_url}{path}", json=payload, headers=self._headers())
             resp.raise_for_status()
             return resp.json()
 
     def _get(self, path: str) -> dict:
         with httpx.Client(timeout=self.timeout) as client:
-            resp = client.get(f"{self.base_url}{path}")
+            resp = client.get(f"{self.base_url}{path}", headers=self._headers())
             resp.raise_for_status()
             return resp.json()
 
