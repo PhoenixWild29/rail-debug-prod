@@ -439,7 +439,7 @@ def _build_report_from_llm(llm_result: dict, error_type: str, error_message: str
     )
 
 
-def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, project_path: str = None, no_git: bool = False, use_memory: bool = True) -> DebugReport:
+def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, project_path: str = None, no_git: bool = False, use_memory: bool = True, max_tier: int = 4) -> DebugReport:
     """
     Quad-Tier Cascading Analysis with optional Project-Aware Mode.
 
@@ -512,8 +512,8 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, projec
             report.git_context_raw = git_contexts
         return report
 
-    # TIER 4: Deep flag bypasses regex entirely
-    if deep:
+    # TIER 4: Deep flag bypasses regex entirely (requires max_tier >= 4)
+    if deep and max_tier >= 4:
         llm_result = analyze_with_llm(traceback_text, deep=True, source_context=full_source_context, project_context=project_context)
         clear_cache()
         if llm_result and "root_cause" in llm_result:
@@ -522,8 +522,8 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, projec
                 file_path, line_number, function_name, traceback_text
             ))
 
-    # TIER 3: Haiku flag bypasses regex entirely
-    if haiku:
+    # TIER 3: Haiku flag bypasses regex entirely (requires max_tier >= 3)
+    if haiku and max_tier >= 3:
         llm_result = analyze_with_llm(traceback_text, haiku=True, source_context=full_source_context, project_context=project_context)
         clear_cache()
         if llm_result and "root_cause" in llm_result:
@@ -549,7 +549,20 @@ def analyze(traceback_text: str, deep: bool = False, haiku: bool = False, projec
             tier=1,
         ))
 
-    # TIER 2: Grok Fast fallback
+    # TIER 2: Grok Fast fallback (requires max_tier >= 2)
+    if max_tier < 2:
+        return _attach_git(DebugReport(
+            error_type=error_type,
+            error_message=error_message,
+            file_path=file_path,
+            line_number=line_number,
+            function_name=function_name,
+            root_cause=f"Regex analysis only — upgrade to Dev plan for AI-powered analysis",
+            suggested_fix="Upgrade at https://debug.secureai.dev/dashboard.html?plan=dev",
+            severity="medium",
+            raw_traceback=traceback_text,
+            tier=1,
+        ))
     llm_result = analyze_with_llm(traceback_text, source_context=full_source_context, project_context=project_context)
     clear_cache()
     if llm_result and "root_cause" in llm_result:
@@ -633,6 +646,7 @@ def analyze_chained(
     deep: bool = False,
     haiku: bool = False,
     project_path: str = None,
+    max_tier: int = 4,
 ) -> ChainedDebugReport:
     """
     Analyze a chained traceback — parse the chain, analyze each link,
@@ -645,7 +659,7 @@ def analyze_chained(
 
     reports = []
     for link in chain.links:
-        report = analyze(link.traceback_text, deep=deep, haiku=haiku, project_path=project_path)
+        report = analyze(link.traceback_text, deep=deep, haiku=haiku, project_path=project_path, max_tier=max_tier)
         reports.append(report)
 
     return ChainedDebugReport(

@@ -176,7 +176,7 @@ document.getElementById('mini-analyze-btn').addEventListener('click', async () =
   try {
     const res = await fetch('/api/analyze', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ traceback: tb }),
     });
     const data = await res.json();

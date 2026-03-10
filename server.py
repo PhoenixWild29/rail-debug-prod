@@ -9,12 +9,17 @@ Launch:
 from dataclasses import asdict
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from core.analyzer import analyze, analyze_to_json, analyze_chained
-from core.batch import analyze_batch, extract_tracebacks
+from core.auth_middleware import (
+    TIER_MAX_AI,
+    check_and_increment_usage,
+    get_analyze_user,
+)
+from core.batch import analyze_batch
 from core.project import scan_project
 from routes.auth import router as auth_router
 from routes.billing import router as billing_router
@@ -86,27 +91,45 @@ def health():
 
 
 @app.post("/analyze")
-def analyze_endpoint(req: AnalyzeRequest):
+def analyze_endpoint(req: AnalyzeRequest, user: Optional[dict] = Depends(get_analyze_user)):
+    tier = user.get("tier", "free") if user else "free"
+    max_tier = TIER_MAX_AI.get(tier, 1)
+    user_id = int(user["sub"]) if user else None
+
+    if user_id:
+        check_and_increment_usage(user_id, tier)
+
     try:
         report = analyze(
             traceback_text=req.traceback,
             deep=req.deep,
             haiku=req.haiku,
             project_path=req.project_path,
+            max_tier=max_tier,
         )
         return _report_to_dict(report)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/analyze/chain")
-def analyze_chain_endpoint(req: ChainRequest):
+def analyze_chain_endpoint(req: ChainRequest, user: Optional[dict] = Depends(get_analyze_user)):
+    tier = user.get("tier", "free") if user else "free"
+    max_tier = TIER_MAX_AI.get(tier, 1)
+    user_id = int(user["sub"]) if user else None
+
+    if user_id:
+        check_and_increment_usage(user_id, tier)
+
     try:
         result = analyze_chained(
             traceback_text=req.traceback,
             deep=req.deep,
             haiku=req.haiku,
             project_path=req.project_path,
+            max_tier=max_tier,
         )
         return {
             "chain_summary": result.chain_summary,
@@ -116,22 +139,28 @@ def analyze_chain_endpoint(req: ChainRequest):
             "final_error": _report_to_dict(result.final_report) if result.final_report else None,
             "total_linked": len(result.reports),
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/analyze/batch")
-def analyze_batch_endpoint(req: BatchRequest):
-    try:
-        tracebacks = extract_tracebacks(req.text)
-        if not tracebacks:
-            return {"reports": [], "total_errors": 0, "severity_counts": {}, "elapsed_seconds": 0.0}
+def analyze_batch_endpoint(req: BatchRequest, user: Optional[dict] = Depends(get_analyze_user)):
+    tier = user.get("tier", "free") if user else "free"
+    max_tier = TIER_MAX_AI.get(tier, 1)
+    user_id = int(user["sub"]) if user else None
 
+    if user_id:
+        check_and_increment_usage(user_id, tier)
+
+    try:
         result = analyze_batch(
-            tracebacks=tracebacks,
+            text=req.text,
             deep=req.deep,
             haiku=req.haiku,
             project_path=req.project_path,
+            max_tier=max_tier,
         )
         return {
             "reports": [_report_to_dict(r) for r in result.reports],
@@ -139,6 +168,8 @@ def analyze_batch_endpoint(req: BatchRequest):
             "severity_counts": result.severity_counts,
             "elapsed_seconds": result.elapsed_seconds,
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

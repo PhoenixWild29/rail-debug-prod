@@ -201,6 +201,7 @@ def analyze_batch(
     deep: bool = False,
     haiku: bool = False,
     project_path: Optional[str] = None,
+    max_tier: int = 4,
 ) -> BatchResult:
     """
     Extract and analyze all errors in a text blob.
@@ -220,7 +221,7 @@ def analyze_batch(
     result = BatchResult(total_errors=len(tracebacks))
 
     for tb in tracebacks:
-        report = analyze(tb, deep=deep, haiku=haiku, project_path=project_path)
+        report = analyze(tb, deep=deep, haiku=haiku, project_path=project_path, max_tier=max_tier)
         result.reports.append(report)
         sev = report.severity
         if sev in result.severity_counts:
