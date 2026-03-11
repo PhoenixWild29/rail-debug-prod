@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analyze — Rail Debug</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/custom.css">
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --accent-green: #00ff88;
+      --accent-blue: #58a6ff;
+      --text-primary: #e6edf3;
+      --text-muted: #8b949e;
+      --border: #30363d;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    body { background: var(--bg-primary); color: var(--text-primary); font-family: Inter, sans-serif; min-height: 100vh; }
+    .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; margin-bottom: 2rem; }
+    .nav-brand { font-family: var(--font-mono); font-weight: 600; color: var(--accent-green); font-size: 1.25rem; }
+    nav { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 64px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 50; }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-link { color: var(--text-muted); font-size: 0.875rem; text-decoration: none; }
+    .nav-link:hover { color: var(--text-primary); }
+    .nav-active { color: var(--accent-green); }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; font-family: var(--font-mono); }
+    .btn-primary { background: var(--accent-green); color: #000; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); }
+    .tier-badge, .lang-badge { font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.75rem; border-radius: 9999px; border: 1px solid var(--border); background: var(--bg-tertiary); }
+    .severity-badge { font-size: 0.875rem; font-weight: 700; padding: 0.5rem 1rem; border-radius: 9999px; color: white; }
+    .severity-critical { background: #dc2626; }
+    .severity-high { background: #ea580c; }
+    .severity-medium { background: #eab308; }
+    .severity-low { background: #00ff88; color: #000; }
+    #traceback-input { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 12px; color: var(--text-primary); font-family: var(--font-mono); font-size: 0.875rem; resize: vertical; min-height: 240px; }
+    #traceback-input:focus { border-color: var(--accent-green); outline: none; box-shadow: 0 0 0 3px rgba(0,255,136,0.1); }
+    .results-section { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; margin-top: 2rem; }
+    .loading { color: var(--accent-blue); font-style: italic; }
+    .analyzing::after { content: '...'; animation: dots 1.5s steps(4) infinite; }
+    @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60%, 100% { content: '...'; } }
+    .error-msg { background: rgba(248,81,73,0.1); border: 1px solid #f85149; color: #f85149; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; display: none; }
+    pre { white-space: pre-wrap; word-break: break-word; background: var(--bg-primary); border: 1px solid var(--border); padding: 1rem; border-radius: 8px; margin: 1rem 0; font-size: 0.875rem; }
+    .fix-code { background: rgba(0,255,136,0.1); border-color: var(--accent-green); }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <a href="/" class="nav-brand">rail-debug ~</a>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/docs.html" class="nav-link">Docs</a>
+      <a href="https://github.com/PhoenixWild29/rail-debug-prod" class="nav-link">GitHub</a>
+      <a href="/dashboard.html" class="nav-link">Dashboard</a>
+      <a href="/analyze.html" class="nav-link nav-active">Analyze</a>
+      <button id="logout-btn" class="btn btn-secondary">Logout</button>
+    </div>
+  </nav>
+
+  <div style="padding-top: 80px; max-width: 1200px; margin: 0 auto; padding-left: 2rem; padding-right: 2rem;">
+
+    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 1rem; font-family: var(--font-mono);">Full Error Analysis</h1>
+    <p style="color: var(--text-muted); margin-bottom: 2rem;">Paste any traceback. Get root cause, severity, and fix.</p>
+
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <label style="font-size: 1.125rem; font-weight: 600; font-family: var(--font-mono);">Traceback</label>
+        <span class="tier-badge lang-badge" id="lang-badge">Python</span>
+      </div>
+      <textarea id="traceback-input" placeholder="Paste your full traceback here (15+ lines recommended)..."></textarea>
+      <div style="margin-top: 1rem; display: flex; gap: 1rem; align-items: center;">
+        <label style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.875rem; color: var(--text-muted);">
+          <input type="checkbox" id="deep-toggle">
+          Deep analysis (advanced models, Team tier)
+        </label>
+        <button id="load-example" class="btn btn-secondary">Load Example</button>
+        <button id="analyze-btn" class="btn btn-primary" style="margin-left: auto;">Analyze</button>
+      </div>
+    </div>
+
+    <div id="error-msg" class="error-msg"></div>
+    <div id="loading-state" style="display: none; text-align: center; padding: 2rem; font-family: var(--font-mono);" class="loading">Running analysis...</div>
+
+    <div id="results" style="display: none;">
+      <div class="results-section">
+        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+          <span class="tier-badge" id="tier-badge">Sonnet</span>
+          <span class="lang-badge" id="lang-badge-2">Python</span>
+          <span id="severity-badge" class="severity-badge" style="display: none;"></span>
+        </div>
+        <h2 id="error-type" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-primary);"></h2>
+        <div style="margin-bottom: 1.5rem;">
+          <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 500;">Root Cause</div>
+          <pre id="root-cause"></pre>
+        </div>
+        <div id="file-line-container" style="display: none; margin-bottom: 1.5rem;">
+          <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">Location</div>
+          <code id="file-line" style="font-family: var(--font-mono); background: var(--bg-primary); padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--border);"></code>
+        </div>
+        <div>
+          <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 500;">Suggested Fix</div>
+          <pre id="suggested-fix" class="fix-code"></pre>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/analyze.js"></script>
+</body>
+</html>
