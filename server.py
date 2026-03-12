@@ -18,13 +18,22 @@ from core.auth_middleware import (
     TIER_MAX_AI,
     check_and_increment_usage,
     get_analyze_user,
+    get_db_conn,
 )
+from core.context import detect_language
 from core.batch import analyze_batch
 from core.project import scan_project
 from routes.auth import router as auth_router
 from routes.billing import router as billing_router
 from routes.github import router as github_router
 from routes.waitlist import router as waitlist_router
+
+TIER_NAMES = {
+    1: "regex",
+    2: "grok",
+    3: "haiku",
+    4: "sonnet",
+}
 
 # ── App ──────────────────────────────────────────────────────────
 
@@ -107,6 +116,21 @@ def analyze_endpoint(req: AnalyzeRequest, user: Optional[dict] = Depends(get_ana
             project_path=req.project_path,
             max_tier=max_tier,
         )
+        lang = detect_language(req.traceback)
+        tier_used = TIER_NAMES.get(report.tier, "unknown")
+        if user_id is not None:
+            conn = get_db_conn()
+            try:
+                cur = conn.cursor()
+                cur.execute(
+                    "INSERT INTO analyses (user_id, language, tier_used, severity) VALUES (%s, %s, %s, %s)",
+                    (user_id, lang, tier_used, report.severity)
+                )
+                conn.commit()
+            except Exception as log_e:
+                print(f"Analysis log failed: {log_e}")
+            finally:
+                conn.close()
         return _report_to_dict(report)
     except HTTPException:
         raise
