@@ -4,12 +4,60 @@ const TIER_LABELS = { free: 'Free', dev: 'Dev — $19/mo', team: 'Team — $99/m
 const TIER_COLORS = { free: '#8b949e', dev: '#58a6ff', team: '#00ff88' };
 const MONTHLY_LIMITS = { free: 100, dev: 10000, team: null };
 
+async function loadTelemetry() {
+  try {
+    const res = await fetch('/api/user/telemetry', { headers: getAuthHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    renderTelemetry(data);
+  } catch (e) {
+    console.error('Telemetry load failed', e);
+  }
+}
+
+function renderTelemetry(data) {
+  const section = document.getElementById('telemetry-section');
+  if (!section) return;
+  section.style.display = 'block';
+  const noData = document.getElementById('no-data');
+  if (data.analyses_this_month === 0 || Object.keys(data.analyses_by_language).length === 0) {
+    noData.style.display = 'block';
+    return;
+  }
+  noData.style.display = 'none';
+  document.getElementById('telemetry-monthly').textContent = data.analyses_this_month;
+  document.getElementById('telemetry-avg').textContent = data.avg_severity;
+  // Lang badges
+  const langContainer = document.getElementById('lang-badges');
+  langContainer.innerHTML = Object.entries(data.analyses_by_language).map(([lang, count]) => 
+    `<span class="tier-badge">${lang}: ${count}</span>`
+  ).join('');
+  // Tier badges
+  const tierContainer = document.getElementById('tier-badges');
+  tierContainer.innerHTML = Object.entries(data.analyses_by_tier).map(([tier, count]) => 
+    `<span class="tier-badge">${tier}: ${count}</span>`
+  ).join('');
+  // Daily chart
+  const chart = document.getElementById('daily-chart');
+  const maxCount = Math.max(...data.daily_usage.map(d => d.count || 0), 1);
+  chart.innerHTML = data.daily_usage.map(day => {
+    const barHeight = ((day.count || 0) / maxCount * 100);
+    return `
+      <div style="flex:1;background:var(--accent-green);border-radius:4px 4px 0 0;height:${barHeight}%;position:relative;min-width:1rem;">
+        <div style="position:absolute;bottom:-1.5rem;font-size:0.7rem;color:var(--text-muted);">${day.count || 0}</div>
+        <div style="position:absolute;top:-1.25rem;font-size:0.7rem;color:var(--text-muted);white-space:nowrap;left:50%;transform:translateX(-50%);">${day.date.slice(5)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
 async function loadDashboard() {
   const res = await fetch('/api/auth/me', { headers: getAuthHeaders() });
   if (res.status === 401) { logout(); return; }
   if (!res.ok) { showError('Failed to load profile.'); return; }
   const user = await res.json();
   renderDashboard(user);
+  loadTelemetry();
 }
 
 function renderDashboard(user) {
