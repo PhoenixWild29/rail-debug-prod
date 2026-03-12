@@ -93,6 +93,28 @@
         </div>
       </div>
 
+      <!-- Rate Limits card -->
+      <div class="card" id="rate-limits-card" style="margin-bottom:1.5rem;display:none;">
+        <div style="font-size:1rem;font-weight:600;margin-bottom:1.25rem;">Rate Limits</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+          <div>
+            <div class="label">Per Minute</div>
+            <div class="value mono" id="minute-usage">0 / —</div>
+            <div class="usage-track"><div class="usage-fill" id="minute-bar" style="width:0%;background:#00ff88;"></div></div>
+          </div>
+          <div>
+            <div class="label">Daily</div>
+            <div class="value mono" id="daily-usage">0 / —</div>
+            <div class="usage-track"><div class="usage-fill" id="daily-bar" style="width:0%;background:#00ff88;"></div></div>
+          </div>
+          <div>
+            <div class="label">Monthly</div>
+            <div class="value mono" id="monthly-detail-usage">0 / —</div>
+            <div class="usage-track"><div class="usage-fill" id="monthly-detail-bar" style="width:0%;background:#00ff88;"></div></div>
+          </div>
+        </div>
+      </div>
+
       <!-- API Key card -->
       <div class="card" style="margin-bottom:1.5rem;">
         <div style="font-size:1rem;font-weight:600;margin-bottom:1.25rem;">API Key</div>

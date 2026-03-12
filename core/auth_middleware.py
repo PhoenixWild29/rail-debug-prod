@@ -19,6 +19,7 @@ JWT_EXPIRY_HOURS = 24
 
 TIER_DAILY_LIMITS = {"free": 20, "dev": 500, "team": None}
 TIER_MONTHLY_LIMITS = {"free": 100, "dev": 10000, "team": None}
+TIER_MINUTE_LIMITS = {"free": 100, "dev": 1000, "team": 5000}
 
 # Tier → maximum AI tier allowed (1=Regex, 2=Grok, 3=Haiku, 4=Sonnet)
 TIER_MAX_AI = {"free": 1, "dev": 2, "team": 4}
@@ -80,19 +81,23 @@ def check_and_increment_usage(user_id: int, tier: str) -> None:
     Silently passes if DB is unavailable (non-blocking degradation)."""
     daily_limit = TIER_DAILY_LIMITS.get(tier)
     monthly_limit = TIER_MONTHLY_LIMITS.get(tier)
+    minute_limit = TIER_MINUTE_LIMITS.get(tier)
 
-    if daily_limit is None and monthly_limit is None:
+    if daily_limit is None and monthly_limit is None and minute_limit is None:
         return  # Unlimited tier
 
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    this_month = datetime.now(timezone.utc).strftime("%Y-%m")
+    now = datetime.now(timezone.utc)
+    today = now.strftime("%Y-%m-%d")
+    this_month = now.strftime("%Y-%m")
+    current_minute = now.strftime("%Y-%m-%d %H:%M")
 
     conn = None
     try:
         conn = get_db_conn()
         cur = conn.cursor()
         cur.execute(
-            "SELECT daily_usage, monthly_usage, last_daily, last_monthly "
+            "SELECT daily_usage, monthly_usage, last_daily, last_monthly, "
+            "minute_usage, last_minute "
             "FROM users WHERE id = %s FOR UPDATE",
             (user_id,),
         )
@@ -106,7 +111,17 @@ def check_and_increment_usage(user_id: int, tier: str) -> None:
             if (user["last_monthly"] or "")[:7] == this_month
             else 0
         )
+        minute_usage = (
+            user["minute_usage"]
+            if user.get("last_minute") == current_minute
+            else 0
+        )
 
+        if minute_limit and minute_usage >= minute_limit:
+            raise HTTPException(
+                status_code=429,
+                detail=f"Minute rate limit of {minute_limit} requests reached. Please wait.",
+            )
         if daily_limit and daily_usage >= daily_limit:
             raise HTTPException(
                 status_code=429,
@@ -121,8 +136,10 @@ def check_and_increment_usage(user_id: int, tier: str) -> None:
         new_monthly = monthly_usage + 1
         cur.execute(
             "UPDATE users SET daily_usage = %s, monthly_usage = %s, "
-            "last_daily = %s, last_monthly = %s WHERE id = %s",
-            (daily_usage + 1, new_monthly, today, today, user_id),
+            "last_daily = %s, last_monthly = %s, "
+            "minute_usage = %s, last_minute = %s WHERE id = %s",
+            (daily_usage + 1, new_monthly, today, today,
+             minute_usage + 1, current_minute, user_id),
         )
         conn.commit()
 

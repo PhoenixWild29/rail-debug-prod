@@ -51,6 +51,37 @@ function renderTelemetry(data) {
   }).join('');
 }
 
+async function loadUsage() {
+  try {
+    const res = await fetch('/api/user/usage', { headers: getAuthHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    const card = document.getElementById('rate-limits-card');
+    if (!card) return;
+    card.style.display = 'block';
+
+    function renderBar(used, limit, usageId, barId) {
+      const el = document.getElementById(usageId);
+      const bar = document.getElementById(barId);
+      if (!el || !bar) return;
+      el.textContent = limit ? `${used} / ${limit}` : `${used} / unlimited`;
+      if (limit) {
+        const pct = Math.min((used / limit) * 100, 100);
+        bar.style.width = pct + '%';
+        bar.style.background = pct > 80 ? '#f85149' : '#00ff88';
+      } else {
+        bar.style.width = '10%';
+      }
+    }
+
+    renderBar(data.minute.used, data.minute.limit, 'minute-usage', 'minute-bar');
+    renderBar(data.daily.used, data.daily.limit, 'daily-usage', 'daily-bar');
+    renderBar(data.monthly.used, data.monthly.limit, 'monthly-detail-usage', 'monthly-detail-bar');
+  } catch (e) {
+    console.error('Usage load failed', e);
+  }
+}
+
 async function loadDashboard() {
   const res = await fetch('/api/auth/me', { headers: getAuthHeaders() });
   if (res.status === 401) { logout(); return; }
@@ -58,6 +89,7 @@ async function loadDashboard() {
   const user = await res.json();
   renderDashboard(user);
   loadTelemetry();
+  loadUsage();
 }
 
 function renderDashboard(user) {
