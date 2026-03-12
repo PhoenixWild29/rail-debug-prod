@@ -7,7 +7,13 @@ from typing import Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from core.auth_middleware import get_current_user, get_db_conn
+from core.auth_middleware import (
+    get_current_user,
+    get_db_conn,
+    TIER_DAILY_LIMITS,
+    TIER_MONTHLY_LIMITS,
+    TIER_MINUTE_LIMITS,
+)
 
 
 router = APIRouter()
@@ -52,6 +58,41 @@ def get_user_dashboard(current_user: Dict[str, Any] = Depends(get_current_user))
         }
     finally:
         conn.close()
+
+@router.get("/api/user/usage")
+def get_user_usage(current_user: Dict[str, Any] = Depends(get_current_user)) -> Dict[str, Any]:
+    user_id = int(current_user["sub"])
+    now = datetime.now(timezone.utc)
+    today = now.strftime("%Y-%m-%d")
+    this_month = now.strftime("%Y-%m")
+    current_minute = now.strftime("%Y-%m-%d %H:%M")
+
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT tier, daily_usage, monthly_usage, last_daily, last_monthly, "
+            "minute_usage, last_minute FROM users WHERE id = %s",
+            (user_id,),
+        )
+        user = cur.fetchone()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        tier = user["tier"]
+        daily = user["daily_usage"] if user["last_daily"] == today else 0
+        monthly = user["monthly_usage"] if (user["last_monthly"] or "")[:7] == this_month else 0
+        minute = user["minute_usage"] if user.get("last_minute") == current_minute else 0
+
+        return {
+            "tier": tier,
+            "minute": {"used": minute, "limit": TIER_MINUTE_LIMITS.get(tier)},
+            "daily": {"used": daily, "limit": TIER_DAILY_LIMITS.get(tier)},
+            "monthly": {"used": monthly, "limit": TIER_MONTHLY_LIMITS.get(tier)},
+        }
+    finally:
+        conn.close()
+
 
 @router.get("/api/user/telemetry")
 def get_user_telemetry(current_user: Dict[str, Any] = Depends(get_current_user)) -> Dict[str, Any]:

@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr
 
-from core.auth_middleware import get_current_user, get_db_conn, make_token, TIER_MONTHLY_LIMITS, TIER_DAILY_LIMITS
+from core.auth_middleware import get_current_user, get_db_conn, make_token, TIER_MONTHLY_LIMITS, TIER_DAILY_LIMITS, TIER_MINUTE_LIMITS
 from services.email_service import send_welcome_email
 
 router = APIRouter(prefix="/auth")
@@ -138,6 +138,7 @@ def me(current_user: dict = Depends(get_current_user)):
     user_dict = dict(user)
     user_dict["monthly_limit"] = TIER_MONTHLY_LIMITS.get(user_dict.get("tier"))
     user_dict["daily_limit"] = TIER_DAILY_LIMITS.get(user_dict.get("tier"))
+    user_dict["minute_limit"] = TIER_MINUTE_LIMITS.get(user_dict.get("tier"))
     return user_dict
 
 
