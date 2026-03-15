@@ -28,6 +28,24 @@
     .plan-card.featured { border-color: var(--accent-green); }
     nav { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 56px; display: flex; align-items: center; justify-content: space-between; }
     .nav-brand { font-family: var(--font-mono); font-weight: 600; color: var(--accent-green); }
+    .period-btn {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    .period-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    .period-btn.active {
+      background: var(--accent-green);
+      border-color: var(--accent-green);
+      color: #000;
+    }
   </style>
 </head>
 <body style="background: var(--bg-primary); color: var(--text-primary); min-height: 100vh;">
@@ -186,12 +204,19 @@
       <button id="modal-close" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text-muted);font-size:1.25rem;cursor:pointer;">✕</button>
       <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:0.5rem;">Upgrade Rail Debug</h2>
       <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1.5rem;">Choose a plan to unlock more analyses and features.</p>
+      <div id="period-toggle" style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1.5rem;padding:1rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:12px;">
+        <button class="period-btn active" data-period="monthly">Monthly</button>
+        <span style="font-size:0.875rem;color:var(--text-muted);">or</span>
+        <button class="period-btn" data-period="yearly">Yearly 
+          <span class="save-badge" style="font-size:0.75rem;padding:0.125rem 0.375rem;border-radius:4px;background:var(--accent-green);color:#000;font-weight:600;margin-left:0.25rem;">Save 20%</span>
+        </button>
+      </div>
       <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
 
         <!-- Dev plan -->
         <div class="plan-card">
           <div style="font-size:1.125rem;font-weight:700;margin-bottom:0.25rem;">Dev</div>
-          <div style="font-size:1.75rem;font-weight:800;color:var(--accent-blue);margin-bottom:0.75rem;">$19<span style="font-size:0.875rem;font-weight:400;color:var(--text-muted);">/mo</span></div>
+          <div class="price" data-plan="dev" style="font-size:1.75rem;font-weight:800;color:var(--accent-blue);margin-bottom:0.75rem;">$29<span class="unit" style="font-size:0.875rem;font-weight:400;color:var(--text-muted);">/mo</span></div>
           <ul style="color:var(--text-muted);font-size:0.8rem;margin-bottom:1rem;list-style:none;padding:0;">
             <li style="margin-bottom:0.3rem;">200 analyses / day</li>
             <li style="margin-bottom:0.3rem;">2,000 analyses / month</li>

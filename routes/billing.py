@@ -27,6 +27,7 @@ def _stripe():
 
 class CheckoutRequest(BaseModel):
     plan: str  # "dev" or "team"
+    billing_period: str = "monthly"  # "monthly" or "yearly"
 
 
 @router.post("/checkout")
@@ -34,9 +35,12 @@ def create_checkout(req: CheckoutRequest, current_user: dict = Depends(get_curre
     if req.plan not in ("dev", "team"):
         raise HTTPException(status_code=422, detail="Invalid plan. Choose 'dev' or 'team'.")
 
-    price_id = os.getenv(f"STRIPE_PRICE_{req.plan.upper()}")
+    if req.billing_period not in ("monthly", "yearly"):
+        raise HTTPException(status_code=422, detail="Invalid billing_period. Choose 'monthly' or 'yearly'.")
+
+    price_id = os.getenv(f"STRIPE_PRICE_{req.plan.upper()}_{req.billing_period.upper()}")
     if not price_id:
-        raise HTTPException(status_code=500, detail=f"Stripe price for '{req.plan}' not configured")
+        raise HTTPException(status_code=500, detail=f"Stripe price for '{req.plan} ({req.billing_period})' not configured. Check .env.")
 
     stripe = _stripe()
     user_id = int(current_user["sub"])
@@ -75,7 +79,7 @@ def create_checkout(req: CheckoutRequest, current_user: dict = Depends(get_curre
             mode="subscription",
             success_url=f"{domain}/dashboard?upgrade=success",
             cancel_url=f"{domain}/dashboard?upgrade=canceled",
-            metadata={"user_id": str(user_id), "plan": req.plan},
+            metadata={"user_id": str(user_id), "plan": req.plan, "billing_period": req.billing_period},
         )
         return {"checkout_url": session.url}
 
@@ -134,7 +138,7 @@ def billing_status(current_user: dict = Depends(get_current_user)):
         cur = conn.cursor()
         cur.execute(
             "SELECT tier, subscription_status, billing_period_end, "
-            "daily_usage, monthly_usage FROM users WHERE id = %s",
+            "daily_usage, monthly_usage, billing_period FROM users WHERE id = %s",
             (user_id,),
         )
         user = cur.fetchone()
@@ -191,6 +195,7 @@ def _handle_event(event: dict) -> None:
 def _activate_subscription(session: dict) -> None:
     user_id = (session.get("metadata") or {}).get("user_id")
     plan = (session.get("metadata") or {}).get("plan", "dev")
+    billing_period = (session.get("metadata") or {}).get("billing_period", "monthly")
     tier = PLAN_TIER_MAP.get(plan, "dev")
     sub_id = session.get("subscription")
     customer_id = session.get("customer")
@@ -204,8 +209,9 @@ def _activate_subscription(session: dict) -> None:
         cur = conn.cursor()
         cur.execute(
             "UPDATE users SET tier = %s, stripe_subscription_id = %s, "
-            "stripe_customer_id = %s, subscription_status = 'active' WHERE id = %s",
-            (tier, sub_id, customer_id, int(user_id)),
+            "stripe_customer_id = %s, subscription_status = 'active', "
+            "billing_period = %s WHERE id = %s",
+            (tier, sub_id, customer_id, billing_period, int(user_id)),
         )
         conn.commit()
         cur.close()

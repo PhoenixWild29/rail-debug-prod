@@ -1,8 +1,22 @@
 // dashboard.js — data fetch + render for dashboard.html
 
-const TIER_LABELS = { free: 'Free', dev: 'Dev — $19/mo', team: 'Team — $99/mo' };
+const TIER_LABELS = { free: 'Free', dev: 'Dev — $29/mo', team: 'Team — $99/mo' };
+const PRICES = {
+  dev: { monthly: 29, yearly: 278 },
+  team: { monthly: 99, yearly: 950 }
+};
+let currentPeriod = 'monthly';
 const TIER_COLORS = { free: '#8b949e', dev: '#58a6ff', team: '#00ff88' };
 const MONTHLY_LIMITS = { free: 100, dev: 10000, team: null };
+
+function updatePrices() {
+  document.querySelectorAll('.price').forEach(el => {
+    const plan = el.dataset.plan;
+    const price = PRICES[plan][currentPeriod];
+    const unit = currentPeriod === 'monthly' ? '/mo' : '/yr';
+    el.innerHTML = `$${price}<span class="unit" style="font-size:0.875rem;font-weight:400;color:var(--text-muted);">${unit}</span>`;
+  });
+}
 
 async function loadTelemetry() {
   try {
