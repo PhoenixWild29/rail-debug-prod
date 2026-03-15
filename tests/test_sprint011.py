@@ -135,22 +135,21 @@ class TestVSCodeExtension:
         with open(self.EXT_DIR / "package.json") as f:
             pkg = json.load(f)
         commands = {c["command"] for c in pkg["contributes"]["commands"]}
-        assert "rail-debug.analyze" in commands
-        assert "rail-debug.analyzeDeep" in commands
-        assert "rail-debug.checkServer" in commands
+        assert "rail-debug.analyzeSelection" in commands
+        assert "rail-debug.analyzeFile" in commands
 
     def test_package_json_has_configuration(self):
         with open(self.EXT_DIR / "package.json") as f:
             pkg = json.load(f)
         props = pkg["contributes"]["configuration"]["properties"]
-        assert "railDebug.serverUrl" in props
-        assert "railDebug.defaultMode" in props
+        assert "railDebug.apiUrl" in props
+        assert "railDebug.apiKey" in props
 
     def test_package_json_has_keybinding(self):
         with open(self.EXT_DIR / "package.json") as f:
             pkg = json.load(f)
         keybindings = pkg["contributes"].get("keybindings", [])
-        assert any(kb["command"] == "rail-debug.analyze" for kb in keybindings)
+        assert any(kb["command"] == "rail-debug.analyzeSelection" for kb in keybindings)
 
     def test_extension_js_exports_activate_deactivate(self):
         with open(self.EXT_DIR / "src" / "extension.js") as f:
