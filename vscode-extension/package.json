@@ -38,7 +38,15 @@
           "description": "API key for Rail Debug"
         }
       }
-    }
+    },
+    "keybindings": [
+      {
+        "command": "rail-debug.analyzeSelection",
+        "key": "ctrl+shift+d",
+        "mac": "cmd+shift+d",
+        "when": "editorHasSelection"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
