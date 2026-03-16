@@ -61,6 +61,9 @@ app.include_router(webhooks_router)
 from routes.dashboard import router as dashboard_router
 app.include_router(dashboard_router)
 
+from routes.teams import router as teams_router
+app.include_router(teams_router)
+
 # ── Request / Response Models ────────────────────────────────────
 
 class AnalyzeRequest(BaseModel):
