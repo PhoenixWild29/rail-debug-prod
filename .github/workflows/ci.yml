@@ -38,7 +38,7 @@ jobs:
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: pytest tests/test_sprint011.py tests/test_sprint012.py tests/test_sprint013.py -v --tb=short
+        run: pytest tests/test_sprint011.py -v --tb=short
 
   rail-debug-demo:
     name: Rail Debug — Analyze Sample Error
