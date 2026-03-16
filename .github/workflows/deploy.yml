@@ -60,12 +60,14 @@ jobs:
             fi
 
             # Run all migrations to ensure DB is up to date
+            export PGPASSWORD=debug123
             for mig in migrations/*.sql; do
               if [ -f "$mig" ]; then
                 echo "Applying migration: $mig"
                 docker exec -i $(docker compose ps -q db) psql -U rail -d users < $mig
               fi
             done
+            unset PGPASSWORD
 
       - name: Health check
         run: |
