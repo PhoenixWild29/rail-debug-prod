@@ -33,15 +33,11 @@ jobs:
             echo "backend=false" >> $GITHUB_OUTPUT
           fi
 
-          MIGRATION=$(grep -E '^migrations/' /tmp/changed.txt | head -1 || true)
-          echo "migration_file=$MIGRATION" >> $GITHUB_OUTPUT
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         env:
           WEB: ${{ steps.diff.outputs.web }}
           BACKEND: ${{ steps.diff.outputs.backend }}
-          MIGRATION: ${{ steps.diff.outputs.migration_file }}
         with:
           host: ${{ secrets.DROPLET_IP }}
           username: root
@@ -63,10 +59,13 @@ jobs:
               docker compose up -d --build server
             fi
 
-            if [ -n "$MIGRATION" ]; then
-              echo "Running migration $MIGRATION"
-              docker exec -i $(docker compose ps -q db) psql -U rail -d users < $MIGRATION
-            fi
+            # Run all migrations to ensure DB is up to date
+            for mig in migrations/*.sql; do
+              if [ -f "$mig" ]; then
+                echo "Applying migration: $mig"
+                docker exec -i $(docker compose ps -q db) psql -U rail -d users < $mig
+              fi
+            done
 
       - name: Health check
         run: |
@@ -91,13 +90,8 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          MIGRATION: ${{ steps.diff.outputs.migration_file }}
         run: |
-          if [ -n "$MIGRATION" ]; then
-            MSG="Auto-deploy complete - health check passed. Migration needed: $MIGRATION - run manually on Droplet."
-          else
-            MSG="Auto-deploy complete - health check passed. Sprint deployed successfully."
-          fi
+          MSG="Auto-deploy complete - health check passed. DB migrations applied."
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             -H "Content-Type: application/json" \
             -d '{"chat_id": "'${CHAT_ID}'", "text": "'${MSG}'"}' || true
