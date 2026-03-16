@@ -64,7 +64,8 @@ jobs:
             fi
 
             if [ -n "$MIGRATION" ]; then
-              echo "MIGRATION_NEEDED: $MIGRATION"
+              echo "Running migration $MIGRATION"
+              docker exec -i $(docker compose ps -q db) psql -U rail -d users < $MIGRATION
             fi
 
       - name: Health check
@@ -99,7 +100,7 @@ jobs:
           fi
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             -H "Content-Type: application/json" \
-            -d "{\"chat_id\": \"${CHAT_ID}\", \"text\": \"${MSG}\"}" || true
+            -d '{"chat_id": "'${CHAT_ID}'", "text": "'${MSG}'"}' || true
 
       - name: Notify Telegram — failure
         if: failure()
@@ -109,4 +110,4 @@ jobs:
         run: |
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             -H "Content-Type: application/json" \
-            -d "{\"chat_id\": \"${CHAT_ID}\", \"text\": \"Auto-deploy FAILED - check GitHub Actions logs.\"}" || true
+            -d '{"chat_id": "'${CHAT_ID}'", "text": "Auto-deploy FAILED - check GitHub Actions logs."}' || true
