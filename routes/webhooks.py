@@ -5,7 +5,7 @@ routes/webhooks.py — Webhook settings endpoints for Slack and Discord notifica
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from core.auth_middleware import get_current_user
-from core.db import get_db_conn
+from core.auth_middleware import get_db_conn
 
 router = APIRouter(prefix="/webhooks")
 
