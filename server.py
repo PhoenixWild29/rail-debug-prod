@@ -42,6 +42,7 @@ app = FastAPI(
     title="Rail Debug API",
     description="Quad-Tier AI Error Analysis Engine",
     version="0.10.0",
+    root_path="/api",
 )
 
 app.add_middleware(
