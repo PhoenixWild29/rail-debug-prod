@@ -6,6 +6,7 @@ Launch:
     python cli.py --serve --port 8000
 """
 
+import os
 from dataclasses import asdict
 from typing import Optional
 
@@ -25,7 +26,9 @@ from core.batch import analyze_batch
 from core.project import scan_project
 from routes.auth import router as auth_router
 from routes.billing import router as billing_router
+from routes.dashboard import router as dashboard_router
 from routes.github import router as github_router
+from routes.teams import router as teams_router
 from routes.waitlist import router as waitlist_router
 from routes.webhooks import router as webhooks_router
 
@@ -45,9 +48,11 @@ app = FastAPI(
     root_path="/api",
 )
 
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "https://debug.secureai.dev").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,15 +60,11 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(billing_router)
+app.include_router(dashboard_router)
 app.include_router(github_router)
+app.include_router(teams_router)
 app.include_router(waitlist_router)
 app.include_router(webhooks_router)
-
-from routes.dashboard import router as dashboard_router
-app.include_router(dashboard_router)
-
-from routes.teams import router as teams_router
-app.include_router(teams_router)
 
 # ── Request / Response Models ────────────────────────────────────
 

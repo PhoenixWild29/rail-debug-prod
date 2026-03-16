@@ -1,0 +1,25 @@
+[project]
+name = "rail-debug"
+version = "0.10.0"
+description = "Quad-Tier AI Error Analysis Engine"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "SecureAI Venture Studio"},
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
+
+[tool.black]
+line-length = 100
+target-version = ["py311", "py312"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
