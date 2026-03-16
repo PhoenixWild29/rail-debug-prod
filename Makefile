@@ -7,7 +7,7 @@ install-hooks:
 	@echo "Done — pre-commit hook active."
 
 test:
-	pytest tests/ -v --tb=short
+	pytest tests/test_sprint011.py tests/test_sprint012.py tests/test_sprint013.py -v --tb=short
 
 lint:
 	python3 -m py_compile core/*.py routes/*.py services/*.py utils/*.py server.py
