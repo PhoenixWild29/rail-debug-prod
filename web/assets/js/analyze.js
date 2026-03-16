@@ -22,7 +22,7 @@ function isLoggedIn() {
 function detectLanguage(traceback) {
   if (!traceback) return 'Unknown';
   const lower = traceback.toLowerCase();
-  if (lower.includes('file &quot;') || lower.includes('traceback (most recent call last)')) return 'Python';
+  if (lower.includes('file "') || lower.includes('traceback (most recent call last)')) return 'Python';
   if (lower.includes('at ')) return 'Java';
   if (lower.includes('node.js') || lower.includes('npm err!')) return 'Node.js';
   if (lower.includes('thread') && lower.includes('rust')) return 'Rust';
@@ -143,9 +143,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (exampleBtn) {
     exampleBtn.addEventListener('click', () => {
       input.value = `Traceback (most recent call last):
-  File &quot;app.py&quot;, line 42, in &lt;module&gt;
-    result = db.query(&quot;SELECT * FROM users WHERE id = %s&quot;, user_id)
-psycopg2.ProgrammingError: syntax error at or near \&quot;%\&quot;
+  File "app.py", line 42, in <module>
+    result = db.query("SELECT * FROM users WHERE id = %s", user_id)
+psycopg2.ProgrammingError: syntax error at or near "%"
 LINE 1: SELECT * FROM users WHERE id = %s
 `;
       input.dispatchEvent(new Event('input'));
