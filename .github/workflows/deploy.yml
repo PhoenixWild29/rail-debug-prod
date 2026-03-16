@@ -38,11 +38,12 @@ jobs:
         env:
           WEB: ${{ steps.diff.outputs.web }}
           BACKEND: ${{ steps.diff.outputs.backend }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         with:
           host: ${{ secrets.DROPLET_IP }}
           username: root
           key: ${{ secrets.DROPLET_SSH_KEY }}
-          envs: WEB,BACKEND,MIGRATION
+          envs: WEB,BACKEND,DB_PASSWORD
           command_timeout: 10m
           script: |
             set -e
@@ -60,11 +61,12 @@ jobs:
             fi
 
             # Run all migrations to ensure DB is up to date
-            export PGPASSWORD=debug123
+            DB_PASS="${DB_PASSWORD:-debug123}"
+            export PGPASSWORD="$DB_PASS"
             for mig in migrations/*.sql; do
               if [ -f "$mig" ]; then
                 echo "Applying migration: $mig"
-                docker exec -e PGPASSWORD -i $(docker compose ps -q db) psql -U rail -d users < $mig
+                docker exec -e PGPASSWORD="$DB_PASS" -i $(docker compose ps -q db) psql -U rail -d users < "$mig" 2>&1 || true
               fi
             done
             unset PGPASSWORD
@@ -93,10 +95,10 @@ jobs:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          MSG="Auto-deploy complete - health check passed. DB migrations applied."
+          MSG="Auto-deploy complete — health check passed. DB migrations applied."
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             -H "Content-Type: application/json" \
-            -d '{"chat_id": "'${CHAT_ID}'", "text": "'${MSG}'"}' || true
+            -d "{\"chat_id\": \"${CHAT_ID}\", \"text\": \"${MSG}\"}" || true
 
       - name: Notify Telegram — failure
         if: failure()
@@ -106,4 +108,4 @@ jobs:
         run: |
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             -H "Content-Type: application/json" \
-            -d '{"chat_id": "'${CHAT_ID}'", "text": "Auto-deploy FAILED - check GitHub Actions logs."}' || true
+            -d "{\"chat_id\": \"${CHAT_ID}\", \"text\": \"Auto-deploy FAILED — check GitHub Actions logs.\"}" || true

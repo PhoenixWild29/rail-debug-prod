@@ -2,23 +2,22 @@ name: CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
-  # ── Core test suite ────────────────────────────────────────────────
   test:
     name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.11', '3.12' ]
+        python-version: ['3.11', '3.12']
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }})
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -36,12 +35,11 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pyyaml
 
-      - name: Run Sprint 011 tests
+      - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: pytest -q tests/test_sprint011.py -v
+        run: pytest tests/ -v --tb=short
 
-  # ── Rail Debug self-analysis demo ──────────────────────────────────
   rail-debug-demo:
     name: Rail Debug — Analyze Sample Error
     runs-on: ubuntu-latest
