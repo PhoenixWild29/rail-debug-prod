@@ -181,6 +181,26 @@
         </div>
       </div>
 
+      <!-- Webhooks card -->
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div style="font-size:1rem;font-weight:600;margin-bottom:1.25rem;">Webhook Notifications</div>
+        <div style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1rem;">Get notified in Slack or Discord when CI failures are analyzed.</div>
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          <div>
+            <label style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;">Slack Webhook URL</label>
+            <input type="url" id="slack-webhook-input" placeholder="https://hooks.slack.com/services/..." style="width:100%;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text-primary);font-size:0.875rem;">
+          </div>
+          <div>
+            <label style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;">Discord Webhook URL</label>
+            <input type="url" id="discord-webhook-input" placeholder="https://discord.com/api/webhooks/..." style="width:100%;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:0.75rem;color:var(--text-primary);font-size:0.875rem;">
+          </div>
+          <div style="display:flex;gap:0.75rem;">
+            <button id="save-webhooks-btn" class="btn btn-primary">Save Settings</button>
+            <button id="test-webhooks-btn" class="btn btn-secondary">Test Webhooks</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Mini analyzer -->
       <div class="card">
         <div style="font-size:1rem;font-weight:600;margin-bottom:1rem;">Quick Debug</div>

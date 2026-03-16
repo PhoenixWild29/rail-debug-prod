@@ -27,6 +27,7 @@ from routes.auth import router as auth_router
 from routes.billing import router as billing_router
 from routes.github import router as github_router
 from routes.waitlist import router as waitlist_router
+from routes.webhooks import router as webhooks_router
 
 TIER_NAMES = {
     1: "regex",
@@ -55,6 +56,7 @@ app.include_router(auth_router)
 app.include_router(billing_router)
 app.include_router(github_router)
 app.include_router(waitlist_router)
+app.include_router(webhooks_router)
 
 from routes.dashboard import router as dashboard_router
 app.include_router(dashboard_router)

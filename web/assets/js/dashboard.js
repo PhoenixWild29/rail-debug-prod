@@ -96,6 +96,18 @@ async function loadUsage() {
   }
 }
 
+async function loadWebhooks() {
+  try {
+    const res = await fetch('/api/webhooks', { headers: getAuthHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    document.getElementById('slack-webhook-input').value = data.slack_webhook_url || '';
+    document.getElementById('discord-webhook-input').value = data.discord_webhook_url || '';
+  } catch (e) {
+    console.error('Webhooks load failed', e);
+  }
+}
+
 async function loadDashboard() {
   const res = await fetch('/api/auth/me', { headers: getAuthHeaders() });
   if (res.status === 401) { logout(); return; }
@@ -104,6 +116,7 @@ async function loadDashboard() {
   renderDashboard(user);
   loadTelemetry();
   loadUsage();
+  loadWebhooks();
 }
 
 function renderDashboard(user) {
@@ -322,6 +335,35 @@ async function loadGithubAnalyses() {
     </div>`;
   }).join('');
 }
+
+// Webhook save
+document.getElementById('save-webhooks-btn').addEventListener('click', async () => {
+  const slack = document.getElementById('slack-webhook-input').value.trim();
+  const discord = document.getElementById('discord-webhook-input').value.trim();
+  const res = await fetch('/api/webhooks', {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: new URLSearchParams({ slack_webhook_url: slack, discord_webhook_url: discord }),
+  });
+  if (!res.ok) {
+    showFlash('Failed to save webhook settings.', 'red');
+    return;
+  }
+  showFlash('Webhook settings saved!', 'green');
+});
+
+// Webhook test
+document.getElementById('test-webhooks-btn').addEventListener('click', async () => {
+  const res = await fetch('/api/webhooks/test', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    showFlash('Failed to send test notifications.', 'red');
+    return;
+  }
+  showFlash('Test notifications sent!', 'green');
+});
 
 // github=connected flash
 const _ghParam = new URLSearchParams(window.location.search).get('github');

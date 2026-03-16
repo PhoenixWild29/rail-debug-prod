@@ -23,7 +23,84 @@ from core.github_client import (
 )
 from core.llm import analyze_with_llm
 
+import httpx as _httpx
+
 router = APIRouter(prefix="/github")
+
+
+def _send_slack_webhook(url: str, analysis: dict, repo_full_name: str, run_id: int):
+    """Send Slack notification using Block Kit."""
+    severity_emoji = {
+        "critical": ":red_circle:",
+        "high": ":orange_circle:",
+        "medium": ":yellow_circle:",
+        "low": ":green_circle:",
+    }.get(analysis.get("severity", "low"), ":white_circle:")
+
+    blocks = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"{severity_emoji} *{analysis.get('error_type', 'Error')}* in {repo_full_name}\n{analysis.get('root_cause', '')[:200]}...",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"*Suggested Fix:* {analysis.get('suggested_fix', '')[:200]}...",
+            },
+        },
+    ]
+
+    run_url = f"https://github.com/{repo_full_name}/actions/runs/{run_id}"
+    blocks.append({
+        "type": "actions",
+        "elements": [
+            {
+                "type": "button",
+                "text": {"type": "plain_text", "text": "View Full Analysis"},
+                "url": run_url,
+            },
+        ],
+    })
+
+    payload = {"blocks": blocks}
+    try:
+        _httpx.post(url, json=payload, timeout=10)
+    except Exception:
+        pass  # Ignore failures
+
+
+def _send_discord_webhook(url: str, analysis: dict, repo_full_name: str, run_id: int):
+    """Send Discord notification using embed."""
+    severity_color = {
+        "critical": 0xff0000,
+        "high": 0xffa500,
+        "medium": 0xffff00,
+        "low": 0x00ff00,
+    }.get(analysis.get("severity", "low"), 0xffffff)
+
+    embed = {
+        "title": f"{analysis.get('error_type', 'Error')} in {repo_full_name}",
+        "description": analysis.get("root_cause", ""),
+        "color": severity_color,
+        "fields": [
+            {
+                "name": "Suggested Fix",
+                "value": analysis.get("suggested_fix", "")[:1024],  # Discord limit
+                "inline": False,
+            },
+        ],
+        "url": f"https://github.com/{repo_full_name}/actions/runs/{run_id}",
+    }
+
+    payload = {"embeds": [embed]}
+    try:
+        _httpx.post(url, json=payload, timeout=10)
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -127,6 +204,37 @@ def _handle_workflow_failure(data: dict) -> None:
     analysis = analyze_with_llm(traceback_snippet)
     if not analysis:
         return
+
+    # Dispatch webhook notifications
+    user_id = None
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT user_id FROM github_installations WHERE installation_id = %s", (installation_id,))
+        row = cur.fetchone()
+        if row:
+            user_id = row[0]
+        cur.close()
+        conn.close()
+    except Exception:
+        pass
+
+    if user_id:
+        try:
+            conn = get_db_conn()
+            cur = conn.cursor()
+            cur.execute("SELECT slack_webhook_url, discord_webhook_url FROM users WHERE id = %s", (user_id,))
+            row = cur.fetchone()
+            cur.close()
+            conn.close()
+            if row:
+                slack_url, discord_url = row
+                if slack_url:
+                    _send_slack_webhook(slack_url, analysis, repo_full_name, run_id)
+                if discord_url:
+                    _send_discord_webhook(discord_url, analysis, repo_full_name, run_id)
+        except Exception:
+            pass
 
     # Format and post comment
     comment_body = format_analysis_comment(analysis, repo_full_name, run_id)
