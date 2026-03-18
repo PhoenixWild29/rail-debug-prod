@@ -181,6 +181,56 @@
         </div>
       </div>
 
+      <!-- Teams card -->
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+          <div style="font-size:1rem;font-weight:600;">Team</div>
+          <span id="team-status-badge" style="font-size:0.75rem;padding:2px 8px;border-radius:4px;background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-muted);">No team</span>
+        </div>
+
+        <!-- No team state -->
+        <div id="team-none-section">
+          <div style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1rem;">Create a team to share analyses and collaborate with others.</div>
+          <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="team-name-input" placeholder="Team name" style="flex:1;min-width:200px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;color:var(--text-primary);font-size:0.875rem;">
+            <button id="create-team-btn" class="btn btn-primary">Create Team</button>
+          </div>
+        </div>
+
+        <!-- Active team state -->
+        <div id="team-active-section" style="display:none;">
+          <div style="margin-bottom:1rem;">
+            <div class="label">Team</div>
+            <div class="value" id="team-name-display">—</div>
+          </div>
+
+          <!-- Members list -->
+          <div style="margin-bottom:1rem;">
+            <div class="label" style="margin-bottom:0.5rem;">Members</div>
+            <div id="team-members-list"></div>
+          </div>
+
+          <!-- Invite -->
+          <div id="team-invite-section" style="display:none;margin-bottom:1rem;">
+            <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+              <input type="email" id="invite-email-input" placeholder="user@example.com" style="flex:1;min-width:200px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;color:var(--text-primary);font-size:0.875rem;">
+              <button id="invite-member-btn" class="btn btn-secondary">Invite</button>
+            </div>
+          </div>
+
+          <!-- Shared analyses -->
+          <div style="margin-bottom:1rem;">
+            <div class="label" style="margin-bottom:0.5rem;">Shared Analyses</div>
+            <div id="team-analyses-list" style="color:var(--text-muted);font-size:0.875rem;">No shared analyses yet.</div>
+          </div>
+
+          <!-- Team actions -->
+          <div id="team-owner-actions" style="display:none;">
+            <button id="delete-team-btn" class="btn btn-danger">Delete Team</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Webhooks card -->
       <div class="card" style="margin-bottom:1.5rem;">
         <div style="font-size:1rem;font-weight:600;margin-bottom:1.25rem;">Webhook Notifications</div>
