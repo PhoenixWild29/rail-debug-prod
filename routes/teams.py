@@ -144,6 +144,143 @@ def join_team(req: TeamJoinRequest, current_user: dict = Depends(get_current_use
         if conn:
             conn.close()
 
+class RoleUpdateRequest(BaseModel):
+    role: str
+
+
+@router.get("/{team_id}/members")
+def list_team_members(team_id: int, current_user: dict = Depends(get_current_user)) -> List[dict]:
+    user_id = int(current_user["sub"])
+    conn = None
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        # Check membership
+        cur.execute("SELECT role FROM team_members WHERE team_id = %s AND user_id = %s", (team_id, user_id))
+        member = cur.fetchone()
+        if not member:
+            raise HTTPException(status_code=403, detail="Not a member of this team.")
+        # Get all members with email
+        cur.execute("""
+            SELECT u.id, u.email, tm.role, tm.joined_at
+            FROM team_members tm
+            JOIN users u ON tm.user_id = u.id
+            WHERE tm.team_id = %s
+            ORDER BY tm.joined_at ASC
+        """, (team_id,))
+        members = cur.fetchall()
+        return [
+            {"user_id": m["id"], "email": m["email"], "role": m["role"], "joined_at": str(m["joined_at"])}
+            for m in members
+        ]
+    finally:
+        if conn:
+            conn.close()
+
+
+@router.delete("/{team_id}")
+def delete_team(team_id: int, current_user: dict = Depends(get_current_user)):
+    user_id = int(current_user["sub"])
+    conn = None
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        # Only owner can delete
+        cur.execute("SELECT role FROM team_members WHERE team_id = %s AND user_id = %s", (team_id, user_id))
+        member = cur.fetchone()
+        if not member or member["role"] != "owner":
+            raise HTTPException(status_code=403, detail="Only the team owner can delete the team.")
+        # Unshare all analyses first
+        cur.execute("UPDATE analyses SET team_id = NULL WHERE team_id = %s", (team_id,))
+        # Delete team (cascades to team_members)
+        cur.execute("DELETE FROM teams WHERE id = %s", (team_id,))
+        conn.commit()
+        return {"message": "Team deleted."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if conn:
+            conn.close()
+
+
+@router.delete("/{team_id}/members/{member_user_id}")
+def remove_team_member(team_id: int, member_user_id: int, current_user: dict = Depends(get_current_user)):
+    user_id = int(current_user["sub"])
+    conn = None
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        # Check requester's role
+        cur.execute("SELECT role FROM team_members WHERE team_id = %s AND user_id = %s", (team_id, user_id))
+        requester = cur.fetchone()
+        if not requester:
+            raise HTTPException(status_code=403, detail="Not a member of this team.")
+        # Members can only remove themselves
+        if requester["role"] == "member" and member_user_id != user_id:
+            raise HTTPException(status_code=403, detail="Only owners and admins can remove other members.")
+        # Can't remove the owner
+        cur.execute("SELECT role FROM team_members WHERE team_id = %s AND user_id = %s", (team_id, member_user_id))
+        target = cur.fetchone()
+        if not target:
+            raise HTTPException(status_code=404, detail="Member not found.")
+        if target["role"] == "owner":
+            raise HTTPException(status_code=400, detail="Cannot remove the team owner.")
+        # Admins can't remove other admins
+        if requester["role"] == "admin" and target["role"] == "admin":
+            raise HTTPException(status_code=403, detail="Admins cannot remove other admins.")
+        cur.execute("DELETE FROM team_members WHERE team_id = %s AND user_id = %s", (team_id, member_user_id))
+        conn.commit()
+        return {"message": "Member removed."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if conn:
+            conn.close()
+
+
+@router.put("/{team_id}/members/{member_user_id}/role")
+def update_member_role(team_id: int, member_user_id: int, req: RoleUpdateRequest, current_user: dict = Depends(get_current_user)):
+    user_id = int(current_user["sub"])
+    if req.role not in ("admin", "member"):
+        raise HTTPException(status_code=422, detail="Role must be 'admin' or 'member'.")
+    conn = None
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        # Only owner can change roles
+        cur.execute("SELECT role FROM team_members WHERE team_id = %s AND user_id = %s", (team_id, user_id))
+        requester = cur.fetchone()
+        if not requester or requester["role"] != "owner":
+            raise HTTPException(status_code=403, detail="Only the team owner can change roles.")
+        # Can't change own role
+        if member_user_id == user_id:
+            raise HTTPException(status_code=400, detail="Cannot change your own role.")
+        # Check target exists
+        cur.execute("SELECT role FROM team_members WHERE team_id = %s AND user_id = %s", (team_id, member_user_id))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Member not found.")
+        cur.execute("UPDATE team_members SET role = %s WHERE team_id = %s AND user_id = %s", (req.role, team_id, member_user_id))
+        conn.commit()
+        return {"message": f"Role updated to {req.role}."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if conn:
+            conn.close()
+
+
 @router.get("/{team_id}/analyses")
 def get_team_analyses(team_id: int, current_user: dict = Depends(get_current_user)) -> List[dict]:
     user_id = int(current_user["sub"])

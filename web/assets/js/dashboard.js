@@ -117,6 +117,7 @@ async function loadDashboard() {
   loadTelemetry();
   loadUsage();
   loadWebhooks();
+  loadTeams();
 }
 
 function renderDashboard(user) {
@@ -335,6 +336,165 @@ async function loadGithubAnalyses() {
     </div>`;
   }).join('');
 }
+
+// === TEAM MANAGEMENT ===
+
+let currentTeam = null;
+let currentTeamRole = null;
+
+async function loadTeams() {
+  try {
+    const res = await fetch('/api/teams', { headers: getAuthHeaders() });
+    if (!res.ok) return;
+    const teams = await res.json();
+    if (teams.length > 0) {
+      currentTeam = teams[0];
+      currentTeamRole = teams[0].role;
+      renderActiveTeam(teams[0]);
+    }
+  } catch (e) {
+    console.error('Teams load failed', e);
+  }
+}
+
+function renderActiveTeam(team) {
+  document.getElementById('team-none-section').style.display = 'none';
+  document.getElementById('team-active-section').style.display = 'block';
+  document.getElementById('team-name-display').textContent = team.name;
+  const badge = document.getElementById('team-status-badge');
+  badge.textContent = team.role.charAt(0).toUpperCase() + team.role.slice(1);
+  badge.style.color = 'var(--accent-green)';
+  badge.style.borderColor = 'var(--accent-green)';
+
+  // Show invite + delete for owner/admin
+  if (team.role === 'owner' || team.role === 'admin') {
+    document.getElementById('team-invite-section').style.display = 'block';
+  }
+  if (team.role === 'owner') {
+    document.getElementById('team-owner-actions').style.display = 'block';
+  }
+
+  loadTeamMembers(team.id);
+  loadTeamAnalyses(team.id);
+}
+
+async function loadTeamMembers(teamId) {
+  try {
+    const res = await fetch(`/api/teams/${teamId}/members`, { headers: getAuthHeaders() });
+    if (!res.ok) return;
+    const members = await res.json();
+    const container = document.getElementById('team-members-list');
+    container.innerHTML = members.map(m => {
+      const roleColor = m.role === 'owner' ? 'var(--accent-green)' : m.role === 'admin' ? 'var(--accent-blue)' : 'var(--text-muted)';
+      const removeBtn = (currentTeamRole === 'owner' || currentTeamRole === 'admin') && m.role !== 'owner'
+        ? `<button class="btn btn-danger remove-member-btn" data-user-id="${m.user_id}" style="padding:0.25rem 0.5rem;font-size:0.75rem;">Remove</button>`
+        : '';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0.75rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;margin-bottom:0.375rem;font-size:0.875rem;">
+        <span>${m.email}</span>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <span style="font-size:0.75rem;color:${roleColor};font-weight:500;">${m.role}</span>
+          ${removeBtn}
+        </div>
+      </div>`;
+    }).join('');
+
+    // Bind remove buttons
+    container.querySelectorAll('.remove-member-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const userId = btn.dataset.userId;
+        if (!confirm('Remove this member from the team?')) return;
+        const res = await fetch(`/api/teams/${teamId}/members/${userId}`, { method: 'DELETE', headers: getAuthHeaders() });
+        if (!res.ok) { showFlash('Failed to remove member.', 'red'); return; }
+        showFlash('Member removed.', 'green');
+        loadTeamMembers(teamId);
+      });
+    });
+  } catch (e) {
+    console.error('Members load failed', e);
+  }
+}
+
+async function loadTeamAnalyses(teamId) {
+  try {
+    const res = await fetch(`/api/teams/${teamId}/analyses`, { headers: getAuthHeaders() });
+    if (!res.ok) return;
+    const analyses = await res.json();
+    const container = document.getElementById('team-analyses-list');
+    if (analyses.length === 0) {
+      container.innerHTML = '<div style="color:var(--text-muted);font-size:0.875rem;">No shared analyses yet.</div>';
+      return;
+    }
+    const severityEmoji = { critical: '🔴', high: '🟠', medium: '🟡', low: '🟢' };
+    container.innerHTML = analyses.slice(0, 10).map(a => {
+      const emoji = severityEmoji[a.severity] || '⚪';
+      const date = a.created_at ? new Date(a.created_at).toLocaleDateString() : '';
+      return `<div style="padding:0.5rem 0.75rem;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;margin-bottom:0.375rem;font-size:0.8rem;display:flex;justify-content:space-between;">
+        <span>${emoji} ${a.language || 'unknown'} — ${a.tier_used || '?'}</span>
+        <span style="color:var(--text-muted);">${date}</span>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.error('Team analyses load failed', e);
+  }
+}
+
+// Create team
+document.getElementById('create-team-btn').addEventListener('click', async () => {
+  const name = document.getElementById('team-name-input').value.trim();
+  if (!name) { showFlash('Enter a team name.', 'yellow'); return; }
+  const res = await fetch('/api/teams', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    showFlash(err.detail || 'Failed to create team.', 'red');
+    return;
+  }
+  showFlash('Team created!', 'green');
+  loadTeams();
+});
+
+// Invite member
+document.getElementById('invite-member-btn').addEventListener('click', async () => {
+  if (!currentTeam) return;
+  const email = document.getElementById('invite-email-input').value.trim();
+  if (!email) { showFlash('Enter an email address.', 'yellow'); return; }
+  const res = await fetch(`/api/teams/${currentTeam.id}/invite`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    showFlash(err.detail || 'Failed to invite member.', 'red');
+    return;
+  }
+  document.getElementById('invite-email-input').value = '';
+  showFlash('Member invited!', 'green');
+  loadTeamMembers(currentTeam.id);
+});
+
+// Delete team
+document.getElementById('delete-team-btn').addEventListener('click', async () => {
+  if (!currentTeam) return;
+  if (!confirm('Delete this team? All shared analyses will be unshared.')) return;
+  const res = await fetch(`/api/teams/${currentTeam.id}`, { method: 'DELETE', headers: getAuthHeaders() });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    showFlash(err.detail || 'Failed to delete team.', 'red');
+    return;
+  }
+  currentTeam = null;
+  currentTeamRole = null;
+  document.getElementById('team-active-section').style.display = 'none';
+  document.getElementById('team-none-section').style.display = 'block';
+  document.getElementById('team-status-badge').textContent = 'No team';
+  document.getElementById('team-status-badge').style.color = 'var(--text-muted)';
+  document.getElementById('team-status-badge').style.borderColor = 'var(--border)';
+  showFlash('Team deleted.', 'green');
+});
 
 // Webhook save
 document.getElementById('save-webhooks-btn').addEventListener('click', async () => {
