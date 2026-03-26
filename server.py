@@ -129,9 +129,15 @@ def analyze_endpoint(req: AnalyzeRequest, user: Optional[dict] = Depends(get_ana
             conn = get_db_conn()
             try:
                 cur = conn.cursor()
+                title = (report.raw_traceback.strip().split('\\n')[0] if report.raw_traceback else '')[:200]
                 cur.execute(
-                    "INSERT INTO analyses (user_id, language, tier_used, severity) VALUES (%s, %s, %s, %s)",
-                    (user_id, lang, tier_used, report.severity)
+                    '''INSERT INTO analyses
+                       (user_id, language, tier_used, severity, traceback_text, error_type,
+                        root_cause, suggested_fix, confidence, model_used, title)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)\"\"\",
+                    (user_id, lang, tier_used, report.severity, report.raw_traceback,
+                     report.error_type, report.root_cause, report.suggested_fix,
+                     report.confidence, report.model, title)
                 )
                 conn.commit()
             except Exception as log_e:

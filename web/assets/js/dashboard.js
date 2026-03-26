@@ -118,6 +118,7 @@ async function loadDashboard() {
   loadUsage();
   loadWebhooks();
   loadTeams();
+  loadAnalysisHistory(0);
 }
 
 function renderDashboard(user) {
@@ -523,6 +524,127 @@ document.getElementById('test-webhooks-btn').addEventListener('click', async () 
     return;
   }
   showFlash('Test notifications sent!', 'green');
+});
+
+// Analysis History — RAIL-039
+let analysisOffset = 0;
+let analysisTotal = 0;
+let analysisList = [];
+
+async function loadAnalysisHistory(offset = 0, append = false) {
+  try {
+    const res = await fetch(`/api/analyses?offset=${offset}`, { headers: getAuthHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!append) {
+      analysisList = data.analyses;
+      analysisOffset = data.analyses.length;
+    } else {
+      analysisList = analysisList.concat(data.analyses);
+      analysisOffset += data.analyses.length;
+    }
+    analysisTotal = data.total;
+    renderAnalysisHistory();
+  } catch (e) {
+    console.error('History load failed', e);
+    document.getElementById('analysis-history-list').innerHTML = '<div style="color:var(--text-muted);">Failed to load history.</div>';
+  }
+}
+
+function renderAnalysisHistory() {
+  const listEl = document.getElementById('analysis-history-list');
+  const loadMoreBtn = document.getElementById('load-more-analyses');
+  if (analysisList.length === 0) {
+    listEl.innerHTML = '<div style="color:var(--text-muted);padding:2rem;text-align:center;">No analyses yet — try analyzing an error above</div>';
+    loadMoreBtn.style.display = 'none';
+    return;
+  }
+  listEl.innerHTML = analysisList.map(a => {
+    const severityColor = {critical: '#f85149', high: '#f59e0b', medium: '#eab308', low: '#22c55e'}[a.severity] || '#6b7280';
+    const tierLabel = a.tier_used === 'regex' ? 'Regex' : a.tier_used ? a.tier_used.charAt(0).toUpperCase() + a.tier_used.slice(1) : '?';
+    const date = new Date(a.created_at).toLocaleDateString();
+    return `
+      <div style="display:flex;align-items:center;gap:1rem;padding:1rem;border:1px solid var(--border);border-radius:12px;margin-bottom:0.75rem;background:var(--bg-tertiary);">
+        <div style="flex:1;">
+          <div style="font-weight:600;margin-bottom:0.25rem;" title="${a.title}">${a.title.length > 60 ? a.title.slice(0,60) + '...' : a.title}</div>
+          <div style="display:flex;gap:0.5rem;align-items:center;font-size:0.875rem;color:var(--text-muted);">
+            <span class="tier-badge" style="background:${severityColor}20;color:${severityColor};">${a.severity.toUpperCase()}</span>
+            <span class="tier-badge">${a.language}</span>
+            <span class="tier-badge">${tierLabel}</span>
+            <span>${date}</span>
+          </div>
+        </div>
+        <button class="btn btn-primary view-analysis-btn" data-id="${a.id}">View</button>
+      </div>
+    `;
+  }).join('');
+  loadMoreBtn.style.display = analysisOffset < analysisTotal ? 'inline-flex' : 'none';
+  document.querySelectorAll('.view-analysis-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => showAnalysisDetail(e.target.dataset.id));
+  });
+}
+
+async function showAnalysisDetail(id) {
+  try {
+    const res = await fetch(`/api/analyses/${id}`, { headers: getAuthHeaders() });
+    if (!res.ok) {
+      showFlash('Analysis not found.', 'red');
+      return;
+    }
+    const data = await res.json();
+    const modalBody = document.getElementById('analysis-detail-body');
+    const severityColor = {critical: '#f85149', high: '#f59e0b', medium: '#eab308', low: '#22c55e'}[data.severity] || '#6b7280';
+    const tierLabel = data.tier_used || data.model_used || '?';
+    const date = new Date(data.created_at).toLocaleString();
+    modalBody.innerHTML = `
+      <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:1rem;">${data.title || 'Analysis'}</h3>
+      <div style="display:flex;gap:1rem;font-size:0.875rem;margin-bottom:1.5rem;">
+        <span class="tier-badge" style="background:${severityColor}20;color:${severityColor};">${data.severity ? data.severity.toUpperCase() : ''}</span>
+        <span class="tier-badge">${data.language || ''}</span>
+        <span class="tier-badge">${tierLabel}</span>
+        <span style="color:var(--text-muted);">${date}</span>
+      </div>
+      <div style="margin-bottom:1.5rem;">
+        <div class="label" style="margin-bottom:0.5rem;">Traceback</div>
+        <pre style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:1rem;font-size:0.875rem;max-height:300px;overflow:auto;white-space:pre-wrap;">${(data.traceback_text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+      </div>
+      <div style="margin-bottom:1.5rem;">
+        <div class="label" style="margin-bottom:0.5rem;">Root Cause</div>
+        <div style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:1rem;">${data.root_cause || ''}</div>
+      </div>
+      <div style="margin-bottom:1.5rem;">
+        <div class="label" style="margin-bottom:0.5rem;">Suggested Fix</div>
+        <div style="position:relative;">
+          <div style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:1rem;">${data.suggested_fix || ''}</div>
+          <button class="copy-fix-btn btn btn-secondary" data-fix="${data.suggested_fix || ''}" style="position:absolute;top:0.5rem;right:0.5rem;padding:0.25rem 0.75rem;font-size:0.75rem;">Copy fix</button>
+        </div>
+      </div>
+      ${typeof currentTeam !== 'undefined' && currentTeam ? `
+        <div>
+          <button class="btn btn-secondary share-team-btn" data-id="${id}">Share with team</button>
+        </div>
+      ` : ''}
+    `;
+    // Copy buttons
+    modalBody.querySelectorAll('.copy-fix-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(btn.dataset.fix).then(() => showFlash('Fix copied!', 'green'));
+      });
+    });
+    // Share stub
+    modalBody.querySelector('.share-team-btn')?.addEventListener('click', () => {
+      showFlash('Share with team coming in RAIL-041.', 'yellow');
+    });
+    document.getElementById('analysis-detail-modal').style.display = 'flex';
+  } catch (e) {
+    showFlash('Failed to load details.', 'red');
+  }
+}
+
+document.getElementById('load-more-analyses').addEventListener('click', () => loadAnalysisHistory(analysisOffset, true));
+document.getElementById('close-detail-modal').addEventListener('click', () => document.getElementById('analysis-detail-modal').style.display = 'none');
+document.getElementById('analysis-detail-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'analysis-detail-modal') e.target.style.display = 'none';
 });
 
 // github=connected flash
