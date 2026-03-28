@@ -40,7 +40,8 @@ class DebugReport:
     model: Optional[str] = None
     architecture_notes: Optional[str] = None
     git_blame: Optional[str] = None  # Compact blame summary for CLI
-    git_context_raw: Optional[list] = field(default=None, repr=False)  # Raw GitContext objects (not serialized)
+    git_context_raw: Optional[list] = field(default=None, repr=False),  # Raw GitContext objects (not serialized)
+    confidence: Optional[float] = None
 
 
 # Common Python error patterns → quick diagnosis
@@ -436,6 +437,7 @@ def _build_report_from_llm(llm_result: dict, error_type: str, error_message: str
         tier=llm_result.get("_tier", 2),
         model=llm_result.get("_model"),
         architecture_notes=llm_result.get("architecture_notes"),
+        confidence=llm_result.get("confidence"),
     )
 
 

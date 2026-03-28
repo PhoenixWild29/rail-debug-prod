@@ -123,3 +123,42 @@ def get_user_telemetry(current_user: Dict[str, Any] = Depends(get_current_user))
         }
     finally:
         conn.close()
+
+@router.get("/analyses")
+async def get_analysis_history(offset: int = 0, current_user=Depends(get_current_user)):
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT id, title, language, tier_used, severity, created_at
+               FROM analyses WHERE user_id = %s
+               ORDER BY created_at DESC LIMIT 50 OFFSET %s""",
+            (current_user["id"], offset)
+        )
+        rows = cur.fetchall()
+        analyses = [
+            {"id": r[0], "title": r[1] or "Untitled", "language": r[2],
+             "tier_used": r[3], "severity": r[4], "created_at": str(r[5])}
+            for r in rows
+        ]
+        cur.execute("SELECT COUNT(*) FROM analyses WHERE user_id = %s", (current_user["id"],))
+        total = cur.fetchone()[0]
+        return {"analyses": analyses, "total": total}
+    finally:
+        conn.close()
+
+@router.get("/analyses/{analysis_id}")
+async def get_analysis_detail(analysis_id: int, current_user=Depends(get_current_user)):
+    conn = get_db_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM analyses WHERE id = %s", (analysis_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        if row[1] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+        cols = [desc[0] for desc in cur.description]
+        return dict(zip(cols, [str(v) if hasattr(v, 'isoformat') else v for v in row]))
+    finally:
+        conn.close()
